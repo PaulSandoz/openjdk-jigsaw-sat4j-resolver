@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+<project name="sat4j-library" default="all" xmlns:artifact="antlib:org.apache.maven.artifact.ant">
+    <import file="../java8.xml"/>
+    
+    <path id="maven-ant-tasks.classpath" path="../lib/maven-ant-tasks-2.1.3.jar" />
+    <typedef resource="org/apache/maven/artifact/ant/antlib.xml"
+             uri="antlib:org.apache.maven.artifact.ant"
+             classpathref="maven-ant-tasks.classpath" />
+
+    <target name="dependencies">
+        <artifact:dependencies filesetId="sat4j.dependency.jars" useScope="runtime">
+            <dependency groupId="org.sat4j" artifactId="org.sat4j.pb" version="2.3.3-SNAPSHOT"/>
+        </artifact:dependencies>
+
+        <copy todir="build/jars">
+            <fileset refid="sat4j.dependency.jars" />
+            <mapper type="flatten" />
+        </copy>
+    </target>
+
+    <target name="compile-modules">
+        <javac8 srcdir="msrc" destdir="build/mclasses"/>
+    </target>
+    
+    <target name="package" depends="compile-modules, dependencies">
+        <delete dir="build/mjars/"/>
+        
+        <copy todir="build/mjars">
+            <fileset dir="build/jars"/>
+        </copy>
+        
+        <jar-modularize src="build/mjars/org.sat4j.core-2.3.3-SNAPSHOT.jar" 
+                        module="build/mclasses/sat4j.core"/>
+            
+        <jar-modularize src="build/mjars/org.sat4j.pb-2.3.3-SNAPSHOT.jar" 
+                        module="build/mclasses/sat4j.pb"/>
+    </target>
+    
+    <target name="install" depends="package">
+        <delete dir="build/mlib/"/>
+        
+        <jmod-create destfile="build/mlib"/>
+        
+        <jmod-install-pkg lib="build/mlib" srcfile="build/mjars/org.sat4j.core-2.3.3-SNAPSHOT.jar"/>
+        <jmod-install-pkg lib="build/mlib" srcfile="build/mjars/org.sat4j.pb-2.3.3-SNAPSHOT.jar"/>
+        
+    </target>    
+</project>
