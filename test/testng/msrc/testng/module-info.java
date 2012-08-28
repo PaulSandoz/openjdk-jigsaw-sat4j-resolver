@@ -23,4 +23,9 @@
  * questions.
  */
 module testng@6.5.2 {
+    requires jdk.jaxp;
+    requires jdk.logging;
+
+    exports org.testng;
+    exports org.testng.annotations;
 }

@@ -32,15 +32,18 @@ import org.openjdk.jigsaw.SimpleLibrary;
 
 public class App {
 
-    public static void main(String[] args) throws Exception {
-
+    public static void main(String... args) throws Exception {
+        traverse(args[0], args[1]);
+    }
+    
+    public static void traverse(String libraryPath, String moduleQuery) throws Exception {
         JigsawModuleSystem jms = JigsawModuleSystem.instance();
 
-        Library l = SimpleLibrary.open(new File(args[0]));
+        Library l = SimpleLibrary.open(new File(libraryPath));
 
-        ModuleIdQuery rootQuery = jms.parseModuleIdQuery(args[1]);
+        ModuleIdQuery rootQuery = jms.parseModuleIdQuery(moduleQuery);
 
         ModuleGraphTraverser t = new ModuleGraphTraverser(l);
-        t.traverse(rootQuery);
+        t.traverse(rootQuery);        
     }
 }

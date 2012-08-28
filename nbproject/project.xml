@@ -8,7 +8,9 @@
             <source-roots>
                 <root id="src.mapp.dir"/>
             </source-roots>
-            <test-roots/>
+            <test-roots>
+                <root id="test.mtest.dir"/>
+            </test-roots>
         </data>
     </configuration>
 </project>

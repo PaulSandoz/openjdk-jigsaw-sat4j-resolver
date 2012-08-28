@@ -4,3 +4,4 @@
 /test/testng/build/
 /test/testng/testng-*.zip
 /nbproject/private/
+/test/test-output/

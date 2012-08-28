@@ -52,6 +52,9 @@
 
     <target name="test" depends="install">
         <java8 lib="build/mlib" module="mtest">
+            <jargs>
+                <arg line="-Dtest.library=build/mlib"/>
+            </jargs>
         </java8>           
     </target>
 

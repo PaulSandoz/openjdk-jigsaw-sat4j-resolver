@@ -136,10 +136,12 @@
     <macrodef name="java8">
         <attribute name="lib"/>
         <attribute name="module"/>
+        <element name="jargs" optional="true"/>
         <element name="args" optional="true"/>
         
         <sequential>            
             <exec executable="${JAVA8_HOME_BIN}/java">
+                <jargs/>
                 <arg line="-L @{lib}"/>
                 <arg line="-m @{module}"/>                
                 <args/>

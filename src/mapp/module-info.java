@@ -26,5 +26,7 @@ module mapp@1.0 {
     requires jdk;
     requires sat4j.pb@2.3.3-SNAPSHOT;
 
+    exports mapp;
+
     class mapp.App;
 }

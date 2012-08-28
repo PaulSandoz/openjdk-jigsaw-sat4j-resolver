@@ -24,16 +24,15 @@
  */
 package mtest;
 
-import mapp.App;
-import org.testng.annotations.Test;
-import org.testng.Assert;
+import org.testng.TestListenerAdapter;
+import org.testng.TestNG;
 
-public class AppTest {
-    @Test
-    public void testApp() throws Exception {
-        Assert.assertTrue(true);
-        
-        System.out.println("Library: " + System.getProperty("test.library"));
-        App.traverse(System.getProperty("test.library"), "mtest");
+public class TestLauncher {
+    public static void main(String[] args) {
+        TestListenerAdapter tla = new TestListenerAdapter();
+        TestNG testng = new TestNG();
+        testng.setTestClasses(new Class[] { AppTest.class });
+        testng.addListener(tla);
+        testng.run();
     }
 }
