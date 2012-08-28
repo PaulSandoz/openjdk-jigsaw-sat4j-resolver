@@ -31,7 +31,9 @@ public class TestLauncher {
     public static void main(String[] args) {
         TestListenerAdapter tla = new TestListenerAdapter();
         TestNG testng = new TestNG();
-        testng.setTestClasses(new Class[] { AppTest.class });
+        testng.setTestClasses(new Class[] { 
+            AppTest.class, 
+            PseudoBooleanExampleTest.class });
         testng.addListener(tla);
         testng.run();
     }

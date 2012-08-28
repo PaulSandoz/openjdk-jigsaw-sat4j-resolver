@@ -33,9 +33,9 @@ import org.sat4j.pb.tools.StringNegator;
 import org.sat4j.pb.tools.WeightedObject;
 import org.sat4j.specs.IVec;
 
-public class PsuedoBooleanExample {
+public class PseudoBooleanExample {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String... args) throws Exception {
         IPBSolver s = new OptToPBSATAdapter(new PseudoOptDecorator(SolverFactory.newDefault()));
         s.setVerbose(true);
 
