@@ -23,44 +23,40 @@
  or visit www.oracle.com if you need additional information or have any
  questions.
 -->
-<project name="sat4j-resolver" default="run" xmlns:artifact="antlib:org.apache.maven.artifact.ant">
-    <import file="java8.xml"/>
+<project name="test-sat4j-resolver" default="test" xmlns:artifact="antlib:org.apache.maven.artifact.ant">
+    <import file="../java8.xml"/>
     
-    <target name="sat4j-install">
-        <ant dir="sat4j" antfile="build8.xml" target="all"/>
+    <target name="testng-install">
+        <ant dir="testng" antfile="build8.xml" target="all"/>
     </target>
     
-    <target name="compile" depends="sat4j-install">
-        <javac8lib lib="sat4j/build/mlib" srcdir="src" destdir="build/mclasses"/>        
+    <target name="library" depends="testng-install">
+        <delete dir="build/mlib"/>
+        <jmod-create-parent parent="../build/mlib" destfile="build/mlib"/>
+
+        <jmod-install-pkg lib="build/mlib" srcfile="testng/build/mjars/testng-6.5.2.jar"/>
+    </target>
+
+    <target name="compile" depends="library">
+        <javac8lib lib="build/mlib" srcdir="src" destdir="build/mclasses"/>        
     </target>
     
     <target name="install" depends="compile">
-        <delete dir="build/mlib"/>
-        <jmod-create-parent parent="sat4j/build/mlib" destfile="build/mlib"/>
-
         <jmod-install-mclasses lib="build/mlib" srcdir="build/mclasses" 
-                               modules="mapp"/>
+                               modules="mtest"/>
     </target>
 
     <target name="clean">
         <delete dir="build"/>        
     </target>
 
-    <target name="run" depends="install">
-        <java8 lib="build/mlib" module="mapp">
-            <args>
-                <arg line="build/mlib"/>
-                <arg line="mapp"/>
-            </args>
+    <target name="test" depends="install">
+        <java8 lib="build/mlib" module="mtest">
         </java8>           
     </target>
 
     <target name="debug" depends="install">
-        <java8debug lib="build/mlib" module="mapp">
-            <args>
-                <arg line="build/mlib"/>
-                <arg line="mapp"/>
-            </args>
+        <java8debug lib="build/mlib" module="mtest">
         </java8debug>
     </target>
 </project>

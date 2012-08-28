@@ -1,3 +1,6 @@
 /build/
 /sat4j/build/
+/test/build/
+/test/testng/build/
+/test/testng/testng-*.zip
 /nbproject/private/
