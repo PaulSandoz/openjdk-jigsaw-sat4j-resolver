@@ -33,7 +33,8 @@ import org.openjdk.jigsaw.SimpleLibrary;
 public class App {
 
     public static void main(String... args) throws Exception {
-        traverse(args[0], args[1]);
+//        traverse(args[0], args[1]);
+        PseudoBooleanExample.main();
     }
     
     public static void traverse(String libraryPath, String moduleQuery) throws Exception {
