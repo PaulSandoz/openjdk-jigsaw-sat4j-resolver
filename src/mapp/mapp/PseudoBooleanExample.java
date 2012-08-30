@@ -206,7 +206,7 @@ public class PseudoBooleanExample {
                 named("A1 requires C1");
 
         helper.disjunction("C1").implies("B2", "B3", "B4", "Babsent").
-                named("C1 requires B[2,4]");
+                named("C1 optionally requires B[2,4]");
         helper.disjunction("C1").implies("D2").
                 named("C1 requires D2");
         
@@ -214,7 +214,7 @@ public class PseudoBooleanExample {
                 named("B1 requires D1");
         
         helper.disjunction("B2").implies("D1").
-                named("B3 requires D1");
+                named("B2 requires D1");
 
         helper.disjunction("B3").implies("D1").
                 named("B3 requires D1");
@@ -228,6 +228,7 @@ public class PseudoBooleanExample {
 
         helper.clause("A1 to be installed", "A1");
 
+        // Weight of Babsent > B4
         String[] x = new String[]{"B1", "B2", "B3", "B4", "Babsent"};
         int[] v = new int[]{1, 2, 3, 4, 5};
 //        int[] v = new int[]{4, 3, 2, 1, 5};
