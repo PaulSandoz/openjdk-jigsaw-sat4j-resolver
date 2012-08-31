@@ -128,6 +128,7 @@ public class ModuleGraphTraverser {
 
             // Find all module id versions of module name
             List<ModuleId> mids = cat.findModuleIds(moduleName);
+            // Sort from lowest to highest version
             Collections.sort(mids);
 
             for (ModuleId mid : mids) {

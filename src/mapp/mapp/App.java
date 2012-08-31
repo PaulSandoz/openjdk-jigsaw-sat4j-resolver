@@ -32,6 +32,7 @@ import java.lang.module.ViewDependence;
 import org.openjdk.jigsaw.JigsawModuleSystem;
 import org.openjdk.jigsaw.Library;
 import org.openjdk.jigsaw.SimpleLibrary;
+import org.openjdk.jigsaw.sat.ModuleDependencyReifier;
 import org.openjdk.jigsaw.sat.ModuleGraphListener;
 import org.openjdk.jigsaw.sat.ModuleGraphTraverser;
 
@@ -64,5 +65,9 @@ public class App {
                 System.out.println(rmi.id() + " -> " + vd + " -> " + mv.id() + " [" + mv.moduleInfo().id() + "]");
             }
         }, rootQuery);
+        
+        ModuleDependencyReifier x = new ModuleDependencyReifier();
+        t.traverse(x, rootQuery);
+        System.out.println(x);
     }
 }
