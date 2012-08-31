@@ -26,17 +26,22 @@ package mapp;
 
 import java.io.File;
 import java.lang.module.ModuleIdQuery;
+import java.lang.module.ModuleInfo;
+import java.lang.module.ModuleView;
+import java.lang.module.ViewDependence;
 import org.openjdk.jigsaw.JigsawModuleSystem;
 import org.openjdk.jigsaw.Library;
 import org.openjdk.jigsaw.SimpleLibrary;
+import org.openjdk.jigsaw.sat.ModuleGraphListener;
+import org.openjdk.jigsaw.sat.ModuleGraphTraverser;
 
 public class App {
 
     public static void main(String... args) throws Exception {
-//        traverse(args[0], args[1]);
-        PseudoBooleanExample.main();
+        traverse(args[0], args[1]);
+//        PseudoBooleanExample.main();
     }
-    
+
     public static void traverse(String libraryPath, String moduleQuery) throws Exception {
         JigsawModuleSystem jms = JigsawModuleSystem.instance();
 
@@ -45,6 +50,19 @@ public class App {
         ModuleIdQuery rootQuery = jms.parseModuleIdQuery(moduleQuery);
 
         ModuleGraphTraverser t = new ModuleGraphTraverser(l);
-        t.traverse(rootQuery);        
+        t.traverse(new ModuleGraphListener() {
+            @Override
+            public void onRootModuleDependency(ModuleIdQuery mq, ModuleView mv) {
+                System.out.println(mq + " -> " + mv.id() + " [" + mv.moduleInfo().id() + "]");
+            }
+
+            @Override
+            public void onModuleDependency(int depth, ModuleInfo rmi, ViewDependence vd, ModuleView mv) {
+                for (int i = 0; i < depth; i++) {
+                    System.out.print(" ");
+                }
+                System.out.println(rmi.id() + " -> " + vd + " -> " + mv.id() + " [" + mv.moduleInfo().id() + "]");
+            }
+        }, rootQuery);
     }
 }
