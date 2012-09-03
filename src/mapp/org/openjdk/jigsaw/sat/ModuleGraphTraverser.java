@@ -30,7 +30,6 @@ import java.lang.module.ModuleInfo;
 import java.lang.module.ModuleView;
 import java.lang.module.ViewDependence;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
@@ -125,6 +124,8 @@ public class ModuleGraphTraverser {
 
         @Override
         void process(State s) throws Exception {
+            process(s, midq);
+            
             String moduleName = midq.name();
 
             // Find all module id versions of module name
@@ -144,6 +145,10 @@ public class ModuleGraphTraverser {
             }
         }
 
+        protected void process(State s, ModuleIdQuery midq) {
+            s.mgl.onModuleIdQuery(midq);                        
+        }
+        
         protected void process(State s, ModuleId mid) {
             s.push(new ModuleNode(depth + 1, midq, mid));
         }
@@ -219,6 +224,10 @@ public class ModuleGraphTraverser {
             super(depth, vd.query());
             this.rmi = rmi;
             this.vd = vd;
+        }
+
+        @Override
+        protected void process(State s, ModuleIdQuery midq) {
         }
 
         @Override

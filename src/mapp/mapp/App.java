@@ -55,6 +55,10 @@ public class App {
         ModuleGraphTraverser t = new ModuleGraphTraverser(l);
         t.traverse(new ModuleGraphListener() {
             @Override
+            public void onModuleIdQuery(ModuleIdQuery midq) {
+            }
+
+            @Override
             public void onRootModuleDependency(ModuleIdQuery mq, ModuleView mv) {
                 System.out.println(mq + " -> " + mv.id() + " [" + mv.moduleInfo().id() + "]");
             }

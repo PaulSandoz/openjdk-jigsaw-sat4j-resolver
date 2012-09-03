@@ -29,6 +29,7 @@ import java.lang.module.ModuleIdQuery;
 import java.lang.module.ModuleInfo;
 import java.lang.module.ModuleView;
 import java.lang.module.ViewDependence;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -38,7 +39,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * An mutable set of reified dependencies.
+ * A mutable set of reified dependencies.
  * <p>
  * Such dependencies can be produced from traversing the module dependency
  * graph for a given catalog.
@@ -84,9 +85,16 @@ public class ReifiedDependencies implements ModuleGraphListener {
     };
 
     @Override
+    public void onModuleIdQuery(ModuleIdQuery midq) {
+        if (roots.get(midq) == null) {
+            roots.put(midq, Collections.EMPTY_SET);
+        }
+    }
+
+    @Override
     public void onRootModuleDependency(ModuleIdQuery midq, ModuleView mv) {
         Set<ModuleId> mvs = roots.get(midq);
-        if (mvs == null) {
+        if (mvs.isEmpty()) {
             mvs = new TreeSet<>(MODULE_ID_COMPARATOR);
             roots.put(midq, mvs);
         }
@@ -99,10 +107,8 @@ public class ReifiedDependencies implements ModuleGraphListener {
     public void onModuleDependency(int depth, ModuleInfo rmi, ViewDependence vd, ModuleView mv) {
         modules.add(rmi.defaultView().id());
 
-        onModuleInfo(rmi);
-
         Set<ModuleId> mvs = dependenceToMatchingIds.get(vd);
-        if (mvs == null) {
+        if (mvs.isEmpty()) {
             mvs = new LinkedHashSet<>();
             dependenceToMatchingIds.put(vd, mvs);
         }
@@ -130,6 +136,13 @@ public class ReifiedDependencies implements ModuleGraphListener {
 
         if (!idToView.containsKey(mid)) {
             idToView.put(mid, mi.defaultView());
+        
+            // Create empty set for view dependences to detect when there are no matches
+            for (ViewDependence vd : mi.requiresModules()) {
+                if (dependenceToMatchingIds.get(vd) == null) {
+                    dependenceToMatchingIds.put(vd, Collections.EMPTY_SET);
+                }
+            }        
         }
     }
 

@@ -35,7 +35,9 @@ import java.lang.module.ViewDependence;
  */
 public interface ModuleGraphListener {
 
+    void onModuleIdQuery(ModuleIdQuery midq);
+    
     void onRootModuleDependency(ModuleIdQuery midq, ModuleView mv);
 
-    public void onModuleDependency(int depth, ModuleInfo rmi, ViewDependence vd, ModuleView mv);
+    void onModuleDependency(int depth, ModuleInfo rmi, ViewDependence vd, ModuleView mv);
 }
