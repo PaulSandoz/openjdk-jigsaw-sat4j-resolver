@@ -30,6 +30,7 @@ import java.lang.module.ModuleInfo;
 import java.lang.module.ModuleView;
 import java.lang.module.ViewDependence;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
@@ -263,18 +264,25 @@ public class ModuleGraphTraverser {
         return null;
     }
 
-    public void traverse(ModuleGraphListener mgl, ModuleIdQuery... midqs) throws Exception {
+    public void traverse(ModuleGraphListener mgl, ModuleIdQuery... midqs) throws ModuleGraphTraversalException {
         Objects.requireNonNull(mgl);
         Objects.requireNonNull(midqs);
 
         State s = new State(mgl);
 
-        // Depth first search of module dependency graph
+        // Add roots, in order of declaration
         for (ModuleIdQuery midq : midqs) {
-            s.push(new ModuleQueryNode(0, midq));
+            s.stack.addLast(new ModuleQueryNode(0, midq));
         }
-        while (!s.isEmpty()) {
-            s.pop().process(s);
+        // Depth first search of module dependency graph
+        try {
+            while (!s.isEmpty()) {
+                s.pop().process(s);
+            }
+        } catch (ModuleGraphTraversalException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ModuleGraphTraversalException(e);
         }
     }
 }

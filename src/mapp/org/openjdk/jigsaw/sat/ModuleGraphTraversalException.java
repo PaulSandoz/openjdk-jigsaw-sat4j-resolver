@@ -22,10 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-module mtest@1.0 {
-  requires mapp;
+package org.openjdk.jigsaw.sat;
 
-  requires testng;
+public class ModuleGraphTraversalException extends RuntimeException {
 
-  class mtest.TestNGLauncher;
+    public ModuleGraphTraversalException(Throwable cause) {
+        super(cause);
+    }
 }

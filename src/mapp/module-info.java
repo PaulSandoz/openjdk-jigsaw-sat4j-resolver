@@ -27,6 +27,7 @@ module mapp@1.0 {
     requires sat4j.pb@2.3.3-SNAPSHOT;
 
     exports mapp;
+    exports org.openjdk.jigsaw.sat;
 
     class mapp.App;
 }

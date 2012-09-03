@@ -22,19 +22,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package mtest;
+package org.openjdk.jigsaw.sat;
 
-import org.testng.TestListenerAdapter;
-import org.testng.TestNG;
+public class ResolverException extends RuntimeException {
 
-public class TestLauncher {
-    public static void main(String[] args) {
-        TestListenerAdapter tla = new TestListenerAdapter();
-        TestNG testng = new TestNG();
-        testng.setTestClasses(new Class[] { 
-            AppTest.class, 
-            PseudoBooleanExampleTest.class });
-        testng.addListener(tla);
-        testng.run();
+    public ResolverException() {
+    }
+
+    public ResolverException(String message) {
+        super(message);
+    }
+        
+    public ResolverException(Throwable cause) {
+        super(cause);
     }
 }

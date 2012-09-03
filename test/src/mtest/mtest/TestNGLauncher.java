@@ -22,10 +22,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-module mtest@1.0 {
-  requires mapp;
+package mtest;
 
-  requires testng;
+import org.openjdk.jigsaw.test.sat.Sat4JResolverTest;
+import org.testng.TestListenerAdapter;
+import org.testng.TestNG;
 
-  class mtest.TestNGLauncher;
+public class TestNGLauncher {
+    public static void main(String[] args) {
+        TestListenerAdapter tla = new TestListenerAdapter();
+        TestNG testng = new TestNG();
+        testng.setTestClasses(new Class[] { 
+            Sat4JResolverTest.class
+        });
+        testng.addListener(tla);
+        testng.run();
+    }
 }

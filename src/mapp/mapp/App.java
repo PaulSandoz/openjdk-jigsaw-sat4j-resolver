@@ -32,9 +32,11 @@ import java.lang.module.ViewDependence;
 import org.openjdk.jigsaw.JigsawModuleSystem;
 import org.openjdk.jigsaw.Library;
 import org.openjdk.jigsaw.SimpleLibrary;
-import org.openjdk.jigsaw.sat.ModuleDependencyReifier;
 import org.openjdk.jigsaw.sat.ModuleGraphListener;
 import org.openjdk.jigsaw.sat.ModuleGraphTraverser;
+import org.openjdk.jigsaw.sat.ReifiedDependencies;
+import org.openjdk.jigsaw.sat.Resolver;
+import org.openjdk.jigsaw.sat.Resolvers;
 
 public class App {
 
@@ -66,7 +68,7 @@ public class App {
             }
         }, rootQuery);
         
-        ModuleDependencyReifier x = new ModuleDependencyReifier();
+        ReifiedDependencies x = new ReifiedDependencies();
         t.traverse(x, rootQuery);
         System.out.println(x);
     }
