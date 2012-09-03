@@ -60,7 +60,7 @@ public class ReifiedDependencies implements ModuleGraphListener {
     // The module view ids are sorted by version, from least to greatest
     public final Map<ModuleIdQuery, Set<ModuleId>> roots;
 
-    // The set of default module view ids that have dependences
+    // The set of default module view ids
     // In topological order of dependency graph traversal (depth first search)
     public final Set<ModuleId> modules;
 
@@ -105,8 +105,6 @@ public class ReifiedDependencies implements ModuleGraphListener {
 
     @Override
     public void onModuleDependency(int depth, ModuleInfo rmi, ViewDependence vd, ModuleView mv) {
-        modules.add(rmi.defaultView().id());
-
         Set<ModuleId> mvs = dependenceToMatchingIds.get(vd);
         if (mvs.isEmpty()) {
             mvs = new LinkedHashSet<>();
@@ -127,6 +125,9 @@ public class ReifiedDependencies implements ModuleGraphListener {
     
     private void onModuleInfo(ModuleInfo mi) {
         final ModuleId mid = mi.defaultView().id();
+
+        modules.add(mid);
+        
         Set<ModuleId> mvs = nameToIds.get(mid.name());
         if (mvs == null) {
             mvs = new TreeSet<>(MODULE_ID_COMPARATOR);
