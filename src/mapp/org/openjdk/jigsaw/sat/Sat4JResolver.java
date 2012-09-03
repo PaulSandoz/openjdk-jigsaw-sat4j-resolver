@@ -167,6 +167,8 @@ public class Sat4JResolver implements Resolver {
             // Preserve topological order of solution
             for (ModuleId mid : rds.idToView.keySet()) {
                 if (names.contains(mid.toString())) {
+                    // Transform module view id to module id to remove
+                    // views from the solution                    
                     mids.add(rds.idToView.get(mid).moduleInfo().id());
                 }
             }
