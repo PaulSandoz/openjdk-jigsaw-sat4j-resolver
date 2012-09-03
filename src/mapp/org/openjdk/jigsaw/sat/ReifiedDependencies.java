@@ -38,7 +38,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * An immutable set of reified dependencies.
+ * An mutable set of reified dependencies.
  * <p>
  * Such dependencies can be produced from traversing the module dependency
  * graph for a given catalog.
