@@ -24,6 +24,7 @@
  */
 package org.openjdk.jigsaw.sat;
 
+import java.lang.module.Dependence.Modifier;
 import java.lang.module.ModuleId;
 import java.lang.module.ModuleIdQuery;
 import java.lang.module.ModuleInfo;
@@ -83,6 +84,7 @@ public class Sat4JResolver implements Resolver {
 
         Map<String, String> viewOrAliasNameToModuleName = getViewOrAliasNameToModuleNameMap(rds);        
         Map<ModuleId, ModuleId> viewOrAliasIdToModuleId = new HashMap<>();
+        Set<String> optionals = new HashSet<>();
         
         // Module dependencies
         for (ModuleId rmid : rds.modules) {
@@ -90,37 +92,49 @@ public class Sat4JResolver implements Resolver {
             for (ViewDependence vd : rmi.requiresModules()) {
                 Set<ModuleId> mids = rds.dependenceToMatchingIds.get(vd);
                 if (!mids.isEmpty()) {
-                    List<String> names = new ArrayList<>(mids.size());
+                    // Process views and aliases
                     for (ModuleId mid : mids) {
-                        names.add(mid.toString());
-                    }
-                    helper.disjunction(rmid.toString()).
-                            implies(names.toArray(new String[0])).
-                            named(String.format("Module %s depends on %s", rmid.toString(), names.toString()));
-
-                    // Views and aliases
-                    for (ModuleId mid : mids) {
-                        ModuleView mv = rds.idToView.get(mid);
-                        ModuleInfo mi = mv.moduleInfo();
+                        ModuleInfo mi = rds.idToView.get(mid).moduleInfo();
                         
                         if (!mi.id().equals(mid)) {
-                            // An alias or view
+                            // View or alias to module
+                            // ## distinguish between view or alias?
                             viewOrAliasIdToModuleId.put(mid, mi.id());
                         }
                     }
 
+                    // (~rmid v mid1 v mid1 v mid3 v ...)
+                    List<String> names = new ArrayList<>(mids.size());
+                    for (ModuleId mid : mids) {
+                        names.add(mid.toString());
+                    }
+                    
+                    // Optional dependence
+                    // Add the literal "*" + mid to represent absense
+                    if (vd.modifiers().contains(Modifier.OPTIONAL)) {
+                        String moduleName = viewOrAliasNameToModuleName.get(vd.query().name());
+                        optionals.add(moduleName);
+                        names.add("*" + moduleName);
+                    }
+                    
+                    helper.disjunction(rmid.toString()).
+                            implies(names.toArray(new String[0])).
+                            named(String.format("Module %s depends on %s", rmid.toString(), names.toString()));
+
                     // ## Permits
 
-                    // ## Optional dependence
                 } else {
                     // ## No matching modules for dependence    
                     // ## Optional dependence
 
                     String moduleName = viewOrAliasNameToModuleName.get(vd.query().name());
                     if (moduleName != null) {
-                        // 1 or more modules are present but do not match the query
+                        // 1 or more modules are present but those do not match the query
                     } else {
-                        // No modules present
+                        // No modules match
+                        // ## Cannot distinguish between no modules in the module
+                        // library or no modules in the dependency graph
+                        // The former can occur if all queries fail to match
                     }
                 }
             }
@@ -137,8 +151,13 @@ public class Sat4JResolver implements Resolver {
                     names.add("-" + mid.toString());
                 }
 
+                // There is at least one optional dependence on the module
+                if (optionals.contains(name)) {
+                    names.add("-" + "*" + name);
+                }
+                
                 helper.atLeast(String.format("Only one version of module %s", name),
-                        versions.size() - 1,
+                        names.size() - 1,
                         names.toArray(new String[0]));
             }
         }
@@ -160,11 +179,11 @@ public class Sat4JResolver implements Resolver {
                 
                 // Views and aliases
                 for (ModuleId mid : versions) {
-                    ModuleView mv = rds.idToView.get(mid);
-                    ModuleInfo mi = mv.moduleInfo();
+                    ModuleInfo mi = rds.idToView.get(mid).moduleInfo();
 
                     if (!mi.id().equals(mid)) {
-                        // An alias or view
+                        // View or alias to module
+                        // ## distinguish between view or alias?
                         viewOrAliasIdToModuleId.put(mid, mi.id());
                     }
                 }
@@ -191,15 +210,23 @@ public class Sat4JResolver implements Resolver {
         {
             List<String> names = new ArrayList<>();
             List<Integer> weights = new ArrayList<>();
-            for (Set<ModuleId> e : rds.nameToIds.values()) {
-                int w = e.size();
-                for (ModuleId mid : e) {
+            
+            for (Map.Entry<String, Set<ModuleId>> e : rds.nameToIds.entrySet()) {
+                String name = e.getKey();
+                Set<ModuleId> mids = e.getValue();
+                
+                int w = mids.size();
+                if (optionals.contains(name)) {
+                    // Literal for optional dependence
+                    names.add("*" + name);
+                    weights.add(w + 1);
+                }
+                for (ModuleId mid : mids) {
                     names.add(mid.toString());
                     weights.add(w--);
-                }
-
-                // ## literal for optional dependence
+                }                
             }
+            
             WeightedObject<String>[] wos = new WeightedObject[names.size()];
             for (int i = 0; i < names.size(); i++) {
                 wos[i] = WeightedObject.newWO(names.get(i), weights.get(i));

@@ -66,8 +66,8 @@ public abstract class AbstractResolverTest {
             mids = r.resolve(midqs);
         } catch (ResolverException ex) {
             caught = ex;
+            System.out.println(caught.getMessage());
         }
-        System.out.println(caught.getMessage());
         Assert.assertNotNull(caught, 
                 "Resolver should fail but passed with the solution " + mids);
     }

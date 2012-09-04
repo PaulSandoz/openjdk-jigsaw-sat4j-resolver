@@ -24,6 +24,7 @@
  */
 package mtest;
 
+import org.openjdk.jigsaw.test.sat.OptionalResolverTest;
 import org.openjdk.jigsaw.test.sat.RequiresResolverTest;
 import org.openjdk.jigsaw.test.sat.ViewAliasResolverTest;
 import org.testng.TestListenerAdapter;
@@ -35,7 +36,8 @@ public class TestNGLauncher {
         TestNG testng = new TestNG();
         testng.setTestClasses(new Class[] { 
             RequiresResolverTest.class,
-            ViewAliasResolverTest.class
+            ViewAliasResolverTest.class,
+            OptionalResolverTest.class
         });
         testng.addListener(tla);
         testng.run();
