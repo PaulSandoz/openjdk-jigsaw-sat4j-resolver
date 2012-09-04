@@ -31,56 +31,79 @@ public class PermitResolverTest extends AbstractResolverTest {
     @Test
     public void testNoPermitOnModule() {
         add(module("a@1").requires("b@1"));
-        
+
         add(module("b@1").permits("c"));
-        
+
         fail(queryIds("a@1"));
     }
-    
+
     @Test
     public void testPermitOnModule() {
         add(module("a@1").requires("b@1"));
-        
+
         add(module("b@1").permits("a"));
-        
+
         resolve(queryIds("a@1"), moduleIds("a@1", "b@1"));
     }
 
     @Test
     public void testNoPermitOnView() {
         add(module("a@1").requires("bv@1"));
-        
+
         add(module("b@1").view("bv").permits("c"));
-        
+
         fail(queryIds("a@1"));
     }
-    
+
     @Test
     public void testPermitOnView() {
         add(module("a@1").requires("bv@1"));
-        
+
         add(module("b@1").view("bv").permits("a"));
-        
+
         resolve(queryIds("a@1"), moduleIds("a@1", "b@1"));
     }
-    
+
     @Test
     public void testPermitRange() {
         add(module("a@1").requires("b"));
-        
+
         add(module("b@1").permits("c"));
         add(module("b@2").permits("a"));
-        
+
         resolve(queryIds("a@1"), moduleIds("a@1", "b@2"));
     }
-    
+
     @Test
     public void testPermitRange2() {
         add(module("a@1").requires("b"));
-        
+
         add(module("b@1").permits("a"));
         add(module("b@2").permits("c"));
-        
+
         resolve(queryIds("a@1"), moduleIds("a@1", "b@1"));
+    }
+
+    @Test
+    public void testPermitWithOptional() {
+        add(module("z@1")
+                .requiresOptional("x"));
+        
+        add(module("x@1").permits("y"));
+
+        resolve(queryIds("z@1"), moduleIds("z@1"));
+    }
+
+    @Test
+    public void testPermitWithOptionalConflict() {
+        add(module("z@1")
+                .requires("y")
+                .requiresOptional("x"));
+        
+        add(module("y@1").requires("x"));
+        
+        add(module("x@1").permits("y"));
+
+        fail(queryIds("z@1"));
     }
 }
