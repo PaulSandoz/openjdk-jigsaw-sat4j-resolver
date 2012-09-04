@@ -125,16 +125,32 @@ public class Sat4JResolver implements Resolver {
 
                 } else {
                     // ## No matching modules for dependence    
-                    // ## Optional dependence
 
                     String moduleName = viewOrAliasNameToModuleName.get(vd.query().name());
                     if (moduleName != null) {
                         // 1 or more modules are present but those do not match the query
+                        
+                        if (vd.modifiers().contains(Modifier.OPTIONAL)) {
+                            helper.disjunction(rmid.toString()).
+                                    implies("*" + moduleName).
+                                    named(String.format("Module %s has an optional dependency %s, which matches no modules", rmid.toString(), vd.query()));
+                            optionals.add(moduleName);
+                        } else {
+                            
+                        }
                     } else {
                         // No modules match
+                        
                         // ## Cannot distinguish between no modules in the module
                         // library or no modules in the dependency graph
                         // The former can occur if all queries fail to match
+                        if (vd.modifiers().contains(Modifier.OPTIONAL)) {
+                            helper.disjunction(rmid.toString()).
+                                    implies("*" + vd.query().name()).
+                                    named(String.format("Module %s has an optional dependency %s, which matches no modules", rmid.toString(), vd.query()));
+                        } else {
+                            
+                        }
                     }
                 }
             }
@@ -145,7 +161,7 @@ public class Sat4JResolver implements Resolver {
             String name = e.getKey();
             Set<ModuleId> versions = e.getValue();
 
-            if (versions.size() > 1) {
+            if (versions.size() > 1 || (versions.size() > 0 && optionals.contains(name))) {
                 List<String> names = new ArrayList<>(versions.size());
                 for (ModuleId mid : versions) {
                     names.add("-" + mid.toString());
@@ -168,16 +184,7 @@ public class Sat4JResolver implements Resolver {
             Set<ModuleId> versions = e.getValue();
 
             if (!versions.isEmpty()) {
-                List<String> names = new ArrayList<>(versions.size());
-                for (ModuleId mid : versions) {
-                    names.add(mid.toString());
-                }
-
-                helper.clause(
-                        String.format("Module %s to be installed", midq.toString()),
-                        names.toArray(new String[0]));  
-                
-                // Views and aliases
+                // Process views and aliases
                 for (ModuleId mid : versions) {
                     ModuleInfo mi = rds.idToView.get(mid).moduleInfo();
 
@@ -187,7 +194,16 @@ public class Sat4JResolver implements Resolver {
                         viewOrAliasIdToModuleId.put(mid, mi.id());
                     }
                 }
-                
+
+                List<String> names = new ArrayList<>(versions.size());
+                for (ModuleId mid : versions) {
+                    names.add(mid.toString());
+                }
+
+                helper.clause(
+                        String.format("Module %s to be installed", midq.toString()),
+                        names.toArray(new String[0]));  
+                                
                 // ## Permits
                 
             } else {
@@ -238,6 +254,7 @@ public class Sat4JResolver implements Resolver {
             Set<String> names = new LinkedHashSet<>(helper.getASolution());
             Set<ModuleId> mids = new LinkedHashSet<>();
 
+            System.out.println("SOLUTION: " + names);
             // Preserve topological order of solution
             for (ModuleId mid : rds.idToView.keySet()) {
                 if (names.contains(mid.toString())) {
