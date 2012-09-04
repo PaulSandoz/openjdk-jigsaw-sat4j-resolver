@@ -85,6 +85,7 @@ public class Sat4JResolver implements Resolver {
         Map<String, String> viewOrAliasNameToModuleName = getViewOrAliasNameToModuleNameMap(rds);
         Map<ModuleId, ModuleId> viewOrAliasIdToModuleId = new HashMap<>();
         Set<String> optionals = new HashSet<>();
+        Map<ModuleId, Set<ModuleId>> notPermitted = new HashMap<>();
 
         // Module dependencies
         for (ModuleId rmid : rds.modules) {
@@ -94,12 +95,25 @@ public class Sat4JResolver implements Resolver {
                 if (!mids.isEmpty()) {
                     // Process views and aliases
                     for (ModuleId mid : mids) {
-                        ModuleInfo mi = rds.idToView.get(mid).moduleInfo();
+                        ModuleView mv = rds.idToView.get(mid);
+                        ModuleInfo mi = mv.moduleInfo();
 
                         if (!mi.id().equals(mid)) {
                             // View or alias to module
                             // ## distinguish between view or alias?
                             viewOrAliasIdToModuleId.put(mid, mi.id());
+                            
+                        }
+                        
+                        if (!mv.permits().isEmpty()) {
+                            if (!mv.permits().contains(rmi.id().name())) {
+                                Set<ModuleId> npmids = notPermitted.get(mv.id());
+                                if (npmids == null) {
+                                    npmids = new HashSet<>();
+                                    notPermitted.put(mv.id(), npmids);
+                                }
+                                npmids.add(rmi.id());
+                            }
                         }
                     }
 
@@ -120,12 +134,7 @@ public class Sat4JResolver implements Resolver {
                     helper.disjunction(rmid.toString()).
                             implies(names.toArray(new String[0])).
                             named(String.format("Module %s depends on %s", rmid, names.toString()));
-
-                    // ## Permits
-
                 } else {
-                    // ## No matching modules for dependence    
-
                     String moduleName = viewOrAliasNameToModuleName.get(vd.query().name());
                     if (moduleName != null) {
                         // 1 or more modules are present but those do not match the query
@@ -136,6 +145,7 @@ public class Sat4JResolver implements Resolver {
                                     named(String.format("Module %s has an optional dependency %s, which matches no modules", rmid, vd.query()));
                             optionals.add(moduleName);
                         } else {
+                            // Fail with explicit conflicting clauses
                             helper.disjunction(rmid.toString()).
                                     implies("*" + moduleName).
                                     named(String.format("Module %s has an dependency %s, which matches no modules", rmid, vd.query()));
@@ -154,6 +164,7 @@ public class Sat4JResolver implements Resolver {
                                     implies("*" + vd.query().name()).
                                     named(String.format("Module %s has an optional dependency %s, which matches no modules", rmid, vd.query()));
                         } else {
+                            // Fail with explicit conflicting clauses
                             helper.disjunction(rmid.toString()).
                                     implies("*" + vd.query().name()).
                                     named(String.format("Module %s has an dependency %s, which matches no modules", rmid, vd.query()));
@@ -213,12 +224,20 @@ public class Sat4JResolver implements Resolver {
                 helper.clause(
                         String.format("Module in query %s to be installed", midq),
                         names.toArray(new String[0]));
-
-                // ## Permits
-
             } else {
+                // Fail with explicit conflicting clauses
                 helper.clause(String.format("Root dependency %s matches no modules", midq), midq.name());
                 helper.clause(String.format("Root dependency %s failed to resolve", midq), "-" + midq.name());
+            }
+        }
+
+        // Not permitted
+        for (Map.Entry<ModuleId, Set<ModuleId>> e : notPermitted.entrySet()) {
+            ModuleId mvid = e.getKey();
+            Set<ModuleId> mids = e.getValue();
+            
+            for (ModuleId mid : mids) {
+                helper.clause(String.format("Module %s is not permitted to depend on %s", mid, mvid), "-" + mvid, "-" + mid);                
             }
         }
 
@@ -230,7 +249,7 @@ public class Sat4JResolver implements Resolver {
                     named(String.format("%s is a view or alias of module %s", e.getKey(), e.getValue()));
         }
 
-
+        
         // Objective function
         // Optimize to prefer newer to older versions
         // ## Make configurable based on phase e.g. compile, install, runtime
