@@ -32,23 +32,23 @@ public class OptionalResolverTest extends AbstractResolverTest {
     public void testNoModule() {
         add(module("a@1").
                 requiresOptional("b@1"));
-        
+
         resolve(queryIds("a@1"), moduleIds("a@1"));
     }
-    
+
     @Test
     public void testNoModule1() {
         add(module("a@1").
                 requires("b@<2"));
-        
+
         add(module("b@1"));
-        
+
         add(module("c@1").
                 requiresOptional("b@>2"));
-        
+
         fail(queryIds("a@1", "c@1"));
     }
-    
+
     @Test
     public void testOptional() {
         add(module("a@1").
@@ -58,7 +58,7 @@ public class OptionalResolverTest extends AbstractResolverTest {
         add(module("c@1").
                 requiresOptional("b@>=2").
                 requires("d@2"));
-                
+
         add(module("b@1").requires("d@1"));
         add(module("b@2").requires("d@1"));
         add(module("b@3").requires("d@1"));
@@ -66,10 +66,10 @@ public class OptionalResolverTest extends AbstractResolverTest {
 
         add(module("d@1"));
         add(module("d@2"));
-                
+
         resolve(queryIds("a@1"), moduleIds("a@1", "c@1", "d@2"));
     }
-    
+
     @Test
     public void testOptional2() {
         add(module("a@1").
@@ -79,7 +79,7 @@ public class OptionalResolverTest extends AbstractResolverTest {
         add(module("c@1").
                 requiresOptional("b@>=2").
                 requires("d@2"));
-                
+
         add(module("b@1"));
         add(module("b@2"));
         add(module("b@3").requires("d@1"));
@@ -87,10 +87,10 @@ public class OptionalResolverTest extends AbstractResolverTest {
 
         add(module("d@1"));
         add(module("d@2"));
-                
+
         resolve(queryIds("a@1"), moduleIds("a@1", "b@2", "c@1", "d@2"));
     }
-    
+
     @Test
     public void testOptional3() {
         add(module("a@1").
@@ -100,7 +100,7 @@ public class OptionalResolverTest extends AbstractResolverTest {
         add(module("c@1").
                 requiresOptional("b@>=2").
                 requires("d@2"));
-                
+
         add(module("b@1"));
         add(module("b@2"));
         add(module("b@3"));
@@ -108,11 +108,10 @@ public class OptionalResolverTest extends AbstractResolverTest {
 
         add(module("d@1"));
         add(module("d@2"));
-                
+
         resolve(queryIds("a@1"), moduleIds("a@1", "b@4", "c@1", "d@2"));
-    }    
-    
-    
+    }
+
     @Test
     public void testOptionalFail() {
         add(module("a@1").
@@ -122,13 +121,13 @@ public class OptionalResolverTest extends AbstractResolverTest {
         add(module("c@1").
                 requires("b@>=2").
                 requires("d@2"));
-                
+
         add(module("b@1").requires("d@1"));
         add(module("b@2"));
 
         add(module("d@1"));
         add(module("d@2"));
-                
+
         fail(queryIds("a@1"));
     }
 }

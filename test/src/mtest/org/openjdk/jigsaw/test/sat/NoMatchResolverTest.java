@@ -22,27 +22,35 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package mtest;
+package org.openjdk.jigsaw.test.sat;
 
-import org.openjdk.jigsaw.test.sat.NoMatchResolverTest;
-import org.openjdk.jigsaw.test.sat.OptionalResolverTest;
-import org.openjdk.jigsaw.test.sat.RequiresResolverTest;
-import org.openjdk.jigsaw.test.sat.ViewAliasResolverTest;
-import org.testng.TestListenerAdapter;
-import org.testng.TestNG;
+import org.testng.annotations.Test;
 
-public class TestNGLauncher {
+public class NoMatchResolverTest extends AbstractResolverTest {
 
-    public static void main(String[] args) {
-        TestListenerAdapter tla = new TestListenerAdapter();
-        TestNG testng = new TestNG();
-        testng.setTestClasses(new Class[]{
-                    RequiresResolverTest.class,
-                    ViewAliasResolverTest.class,
-                    OptionalResolverTest.class,
-                    NoMatchResolverTest.class
-                });
-        testng.addListener(tla);
-        testng.run();
+    @Test
+    public void testRootAbsent() {
+        fail(queryIds("a@1"));
+    }
+
+    @Test
+    public void testAbsent() {
+        add(module("a@1").
+                requires("b@1"));
+
+        fail(queryIds("a@1"));
+    }
+
+    @Test
+    public void testAbsent2() {
+        add(module("a@1").
+                requires("b@1"));
+
+        add(module("c@1").
+                requires("b@2"));
+
+        add(module("b@2"));
+
+        fail(queryIds("a@1", "c@1"));
     }
 }

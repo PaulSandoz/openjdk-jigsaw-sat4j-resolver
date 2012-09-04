@@ -82,10 +82,10 @@ public class Sat4JResolver implements Resolver {
         DependencyHelper<String, String> helper = new DependencyHelper<>(s);
         helper.setNegator(StringNegator.instance);
 
-        Map<String, String> viewOrAliasNameToModuleName = getViewOrAliasNameToModuleNameMap(rds);        
+        Map<String, String> viewOrAliasNameToModuleName = getViewOrAliasNameToModuleNameMap(rds);
         Map<ModuleId, ModuleId> viewOrAliasIdToModuleId = new HashMap<>();
         Set<String> optionals = new HashSet<>();
-        
+
         // Module dependencies
         for (ModuleId rmid : rds.modules) {
             ModuleInfo rmi = rds.idToView.get(rmid).moduleInfo();
@@ -95,7 +95,7 @@ public class Sat4JResolver implements Resolver {
                     // Process views and aliases
                     for (ModuleId mid : mids) {
                         ModuleInfo mi = rds.idToView.get(mid).moduleInfo();
-                        
+
                         if (!mi.id().equals(mid)) {
                             // View or alias to module
                             // ## distinguish between view or alias?
@@ -108,7 +108,7 @@ public class Sat4JResolver implements Resolver {
                     for (ModuleId mid : mids) {
                         names.add(mid.toString());
                     }
-                    
+
                     // Optional dependence
                     // Add the literal "*" + mid to represent absense
                     if (vd.modifiers().contains(Modifier.OPTIONAL)) {
@@ -116,10 +116,10 @@ public class Sat4JResolver implements Resolver {
                         optionals.add(moduleName);
                         names.add("*" + moduleName);
                     }
-                    
+
                     helper.disjunction(rmid.toString()).
                             implies(names.toArray(new String[0])).
-                            named(String.format("Module %s depends on %s", rmid.toString(), names.toString()));
+                            named(String.format("Module %s depends on %s", rmid, names.toString()));
 
                     // ## Permits
 
@@ -129,33 +129,43 @@ public class Sat4JResolver implements Resolver {
                     String moduleName = viewOrAliasNameToModuleName.get(vd.query().name());
                     if (moduleName != null) {
                         // 1 or more modules are present but those do not match the query
-                        
+
                         if (vd.modifiers().contains(Modifier.OPTIONAL)) {
                             helper.disjunction(rmid.toString()).
                                     implies("*" + moduleName).
-                                    named(String.format("Module %s has an optional dependency %s, which matches no modules", rmid.toString(), vd.query()));
+                                    named(String.format("Module %s has an optional dependency %s, which matches no modules", rmid, vd.query()));
                             optionals.add(moduleName);
                         } else {
-                            
+                            helper.disjunction(rmid.toString()).
+                                    implies("*" + moduleName).
+                                    named(String.format("Module %s has an dependency %s, which matches no modules", rmid, vd.query()));
+                            helper.disjunction(rmid.toString()).
+                                    implies("-" + "*" + moduleName).
+                                    named(String.format("Module %s cannot be installed", rmid, vd.query()));
                         }
                     } else {
                         // No modules match
-                        
+
                         // ## Cannot distinguish between no modules in the module
                         // library or no modules in the dependency graph
                         // The former can occur if all queries fail to match
                         if (vd.modifiers().contains(Modifier.OPTIONAL)) {
                             helper.disjunction(rmid.toString()).
                                     implies("*" + vd.query().name()).
-                                    named(String.format("Module %s has an optional dependency %s, which matches no modules", rmid.toString(), vd.query()));
+                                    named(String.format("Module %s has an optional dependency %s, which matches no modules", rmid, vd.query()));
                         } else {
-                            
+                            helper.disjunction(rmid.toString()).
+                                    implies("*" + vd.query().name()).
+                                    named(String.format("Module %s has an dependency %s, which matches no modules", rmid, vd.query()));
+                            helper.disjunction(rmid.toString()).
+                                    implies("-" + "*" + vd.query().name()).
+                                    named(String.format("Module %s cannot be installed", rmid, vd.query()));
                         }
                     }
                 }
             }
         }
-        
+
         // Only one version of a module
         for (Map.Entry<String, Set<ModuleId>> e : rds.nameToIds.entrySet()) {
             String name = e.getKey();
@@ -171,7 +181,7 @@ public class Sat4JResolver implements Resolver {
                 if (optionals.contains(name)) {
                     names.add("-" + "*" + name);
                 }
-                
+
                 helper.atLeast(String.format("Only one version of module %s", name),
                         names.size() - 1,
                         names.toArray(new String[0]));
@@ -201,14 +211,15 @@ public class Sat4JResolver implements Resolver {
                 }
 
                 helper.clause(
-                        String.format("Module %s to be installed", midq.toString()),
-                        names.toArray(new String[0]));  
-                                
+                        String.format("Module in query %s to be installed", midq),
+                        names.toArray(new String[0]));
+
                 // ## Permits
-                
+
             } else {
-                // ## No matching modules for root query 
-          }
+                helper.clause(String.format("Root dependency %s matches no modules", midq), midq.name());
+                helper.clause(String.format("Root dependency %s failed to resolve", midq), "-" + midq.name());
+            }
         }
 
         // View and aliases
@@ -217,8 +228,8 @@ public class Sat4JResolver implements Resolver {
             helper.disjunction(e.getKey().toString()).
                     implies(e.getValue().toString()).
                     named(String.format("%s is a view or alias of module %s", e.getKey(), e.getValue()));
-        }        
-        
+        }
+
 
         // Objective function
         // Optimize to prefer newer to older versions
@@ -226,11 +237,11 @@ public class Sat4JResolver implements Resolver {
         {
             List<String> names = new ArrayList<>();
             List<Integer> weights = new ArrayList<>();
-            
+
             for (Map.Entry<String, Set<ModuleId>> e : rds.nameToIds.entrySet()) {
                 String name = e.getKey();
                 Set<ModuleId> mids = e.getValue();
-                
+
                 int w = mids.size();
                 if (optionals.contains(name)) {
                     // Literal for optional dependence
@@ -240,9 +251,9 @@ public class Sat4JResolver implements Resolver {
                 for (ModuleId mid : mids) {
                     names.add(mid.toString());
                     weights.add(w--);
-                }                
+                }
             }
-            
+
             WeightedObject<String>[] wos = new WeightedObject[names.size()];
             for (int i = 0; i < names.size(); i++) {
                 wos[i] = WeightedObject.newWO(names.get(i), weights.get(i));
@@ -254,7 +265,6 @@ public class Sat4JResolver implements Resolver {
             Set<String> names = new LinkedHashSet<>(helper.getASolution());
             Set<ModuleId> mids = new LinkedHashSet<>();
 
-            System.out.println("SOLUTION: " + names);
             // Preserve topological order of solution
             for (ModuleId mid : rds.idToView.keySet()) {
                 if (names.contains(mid.toString())) {
@@ -271,23 +281,23 @@ public class Sat4JResolver implements Resolver {
             throw new ResolverException(why.toString());
         }
     }
-    
+
     Map<String, String> getViewOrAliasNameToModuleNameMap(ReifiedDependencies rds) {
         Map<String, String> names = new HashMap<>();
         for (ModuleId mid : rds.modules) {
             ModuleInfo mi = rds.idToView.get(mid).moduleInfo();
-            
+
             names.put(mid.name(), mid.name());
-            
+
             for (ModuleView mv : mi.views()) {
                 names.put(mv.id().name(), mid.name());
 
                 for (ModuleId aliasMid : mv.aliases()) {
-                    names.put(aliasMid.name(), mid.name());                    
+                    names.put(aliasMid.name(), mid.name());
                 }
             }
         }
-        
+
         return names;
     }
 }
