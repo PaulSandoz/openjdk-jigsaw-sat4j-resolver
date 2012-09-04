@@ -118,10 +118,8 @@ public class Sat4JResolver implements Resolver {
                     String moduleName = viewOrAliasNameToModuleName.get(vd.query().name());
                     if (moduleName != null) {
                         // 1 or more modules are present but do not match the query
-                        
                     } else {
                         // No modules present
-                        
                     }
                 }
             }
@@ -180,7 +178,9 @@ public class Sat4JResolver implements Resolver {
         // View and aliases
         for (Map.Entry<ModuleId, ModuleId> e : viewOrAliasIdToModuleId.entrySet()) {
             // view/alias id => module id
-            helper.disjunction(e.getKey().toString()).implies(e.getValue().toString());
+            helper.disjunction(e.getKey().toString()).
+                    implies(e.getValue().toString()).
+                    named(String.format("%s is a view or alias of module %s", e.getKey(), e.getValue()));
         }        
         
 

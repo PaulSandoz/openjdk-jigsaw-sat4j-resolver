@@ -101,6 +101,8 @@ public class ReifiedDependencies implements ModuleGraphListener {
         }
         mvs.add(mv.id());
 
+        // ## Aliases are ignored
+        
         onModuleView(mv);
     }
 
@@ -121,6 +123,8 @@ public class ReifiedDependencies implements ModuleGraphListener {
         }
         mvs.add(mv.id());
 
+        // ## Aliases are ignored
+        
         onModuleView(mv);
     }
 

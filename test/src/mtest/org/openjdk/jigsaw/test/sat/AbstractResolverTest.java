@@ -34,6 +34,7 @@ import org.openjdk.jigsaw.JigsawModuleSystem;
 import org.openjdk.jigsaw.sat.ResolverException;
 import org.openjdk.jigsaw.sat.Sat4JResolver;
 import org.testng.Assert;
+import org.testng.annotations.BeforeMethod;
 
 public abstract class AbstractResolverTest {
 
@@ -43,6 +44,13 @@ public abstract class AbstractResolverTest {
 
     protected Sat4JResolver r = new Sat4JResolver(mlib);
 
+    @BeforeMethod
+    void before() {
+        mlib = new MockLibrary();
+
+        r = new Sat4JResolver(mlib);
+    }
+    
     protected void resolve(ModuleIdQuery[] midqs, Set<ModuleId> expectedMids) {
         Set<ModuleId> mids = r.resolve(midqs);
         System.out.println(mids);
