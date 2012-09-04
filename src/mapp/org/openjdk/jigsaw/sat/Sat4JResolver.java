@@ -28,8 +28,11 @@ import java.lang.module.ModuleId;
 import java.lang.module.ModuleIdQuery;
 import java.lang.module.ModuleInfo;
 import java.lang.module.ModuleSystem;
+import java.lang.module.ModuleView;
 import java.lang.module.ViewDependence;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +80,9 @@ public class Sat4JResolver implements Resolver {
         DependencyHelper<String, String> helper = new DependencyHelper<>(s);
         helper.setNegator(StringNegator.instance);
 
+        Map<String, String> viewOrAliasNameToModuleName = getViewOrAliasNameToModuleNameMap(rds);        
+        Map<ModuleId, ModuleId> viewOrAliasIdToModuleId = new HashMap<>();
+        
         // Module dependencies
         for (ModuleId rmid : rds.modules) {
             ModuleInfo rmi = rds.idToView.get(rmid).moduleInfo();
@@ -91,7 +97,16 @@ public class Sat4JResolver implements Resolver {
                             implies(names.toArray(new String[0])).
                             named(String.format("Module %s depends on %s", rmid.toString(), names.toString()));
 
-                    // ## Views and aliases
+                    // Views and aliases
+                    for (ModuleId mid : mids) {
+                        ModuleView mv = rds.idToView.get(mid);
+                        ModuleInfo mi = mv.moduleInfo();
+                        
+                        if (!mi.id().equals(mid)) {
+                            // An alias or view
+                            viewOrAliasIdToModuleId.put(mid, mi.id());
+                        }
+                    }
 
                     // ## Permits
 
@@ -100,11 +115,18 @@ public class Sat4JResolver implements Resolver {
                     // ## No matching modules for dependence    
                     // ## Optional dependence
 
-                    // ## Is module id query name the name of a non-default view?
+                    String moduleName = viewOrAliasNameToModuleName.get(vd.query().name());
+                    if (moduleName != null) {
+                        // 1 or more modules are present but do not match the query
+                        
+                    } else {
+                        // No modules present
+                        
+                    }
                 }
             }
         }
-
+        
         // Only one version of a module
         for (Map.Entry<String, Set<ModuleId>> e : rds.nameToIds.entrySet()) {
             String name = e.getKey();
@@ -124,7 +146,7 @@ public class Sat4JResolver implements Resolver {
 
         // Root modules to be installed
         for (Map.Entry<ModuleIdQuery, Set<ModuleId>> e : rds.roots.entrySet()) {
-            ModuleIdQuery name = e.getKey();
+            ModuleIdQuery midq = e.getKey();
             Set<ModuleId> versions = e.getValue();
 
             if (!versions.isEmpty()) {
@@ -134,15 +156,33 @@ public class Sat4JResolver implements Resolver {
                 }
 
                 helper.clause(
-                        String.format("Module %s to be installed", name.toString()),
-                        names.toArray(new String[0]));
+                        String.format("Module %s to be installed", midq.toString()),
+                        names.toArray(new String[0]));  
+                
+                // Views and aliases
+                for (ModuleId mid : versions) {
+                    ModuleView mv = rds.idToView.get(mid);
+                    ModuleInfo mi = mv.moduleInfo();
+
+                    if (!mi.id().equals(mid)) {
+                        // An alias or view
+                        viewOrAliasIdToModuleId.put(mid, mi.id());
+                    }
+                }
+                
+                // ## Permits
+                
             } else {
                 // ## No matching modules for root query 
-                // ## Is module id query name the name of a non-default view?
-            }
+          }
         }
 
-
+        // View and aliases
+        for (Map.Entry<ModuleId, ModuleId> e : viewOrAliasIdToModuleId.entrySet()) {
+            // view/alias id => module id
+            helper.disjunction(e.getKey().toString()).implies(e.getValue().toString());
+        }        
+        
 
         // Objective function
         // Optimize to prefer newer to older versions
@@ -185,5 +225,24 @@ public class Sat4JResolver implements Resolver {
             Set<String> why = helper.why();
             throw new ResolverException(why.toString());
         }
+    }
+    
+    Map<String, String> getViewOrAliasNameToModuleNameMap(ReifiedDependencies rds) {
+        Map<String, String> names = new HashMap<>();
+        for (ModuleId mid : rds.modules) {
+            ModuleInfo mi = rds.idToView.get(mid).moduleInfo();
+            
+            names.put(mid.name(), mid.name());
+            
+            for (ModuleView mv : mi.views()) {
+                names.put(mv.id().name(), mid.name());
+
+                for (ModuleId aliasMid : mv.aliases()) {
+                    names.put(aliasMid.name(), mid.name());                    
+                }
+            }
+        }
+        
+        return names;
     }
 }

@@ -35,8 +35,6 @@ import org.openjdk.jigsaw.SimpleLibrary;
 import org.openjdk.jigsaw.sat.ModuleGraphListener;
 import org.openjdk.jigsaw.sat.ModuleGraphTraverser;
 import org.openjdk.jigsaw.sat.ReifiedDependencies;
-import org.openjdk.jigsaw.sat.Resolver;
-import org.openjdk.jigsaw.sat.Resolvers;
 
 public class App {
 
@@ -55,16 +53,20 @@ public class App {
         ModuleGraphTraverser t = new ModuleGraphTraverser(l);
         t.traverse(new ModuleGraphListener() {
             @Override
-            public void onModuleIdQuery(ModuleIdQuery midq) {
+            public void onRootDependence(ModuleIdQuery midq) {
             }
 
             @Override
-            public void onRootModuleDependency(ModuleIdQuery mq, ModuleView mv) {
+            public void onMatchingRootDependence(ModuleIdQuery mq, ModuleView mv) {
                 System.out.println(mq + " -> " + mv.id() + " [" + mv.moduleInfo().id() + "]");
             }
 
             @Override
-            public void onModuleDependency(int depth, ModuleInfo rmi, ViewDependence vd, ModuleView mv) {
+            public void onViewDependence(int depth, ModuleInfo rmi, ViewDependence vd) {
+            }
+
+            @Override
+            public void onMatchingViewDependence(int depth, ModuleInfo rmi, ViewDependence vd, ModuleView mv) {
                 for (int i = 0; i < depth; i++) {
                     System.out.print(" ");
                 }

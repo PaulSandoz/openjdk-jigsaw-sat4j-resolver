@@ -46,27 +46,27 @@ import java.util.TreeSet;
  */
 public class ReifiedDependencies implements ModuleGraphListener {
 
-    // Map of module view id to module view
+    // Map of module view/alias id to module view
     // In topological order of dependency graph traversal (depth first search)
     // The key set contains all known modules view ids
     public final Map<ModuleId, ModuleView> idToView;
 
-    // Default module view ids grouped by module name
+    // Module ids grouped by module name
     // The module ids are sorted by version, from least to greatest
     public final Map<String, Set<ModuleId>> nameToIds;
 
-    // Root module view ids, grouped by module id query name
+    // Root module view/alias ids, grouped by module id query name
     // Keys are in declaration order
-    // The module view ids are sorted by version, from least to greatest
+    // The module view/alias ids are sorted by version, from least to greatest
     public final Map<ModuleIdQuery, Set<ModuleId>> roots;
 
-    // The set of default module view ids
+    // The set of module ids
     // In topological order of dependency graph traversal (depth first search)
     public final Set<ModuleId> modules;
 
-    // View dependence to matching module view ids
+    // View dependence to matching module view/alias ids
     // Order of keys is unspecified
-    // The module view ids are sorted by version, from least to greatest
+    // The module view/alias ids are sorted by version, from least to greatest
     public final Map<ViewDependence, Set<ModuleId>> dependenceToMatchingIds;
 
     public ReifiedDependencies() {
@@ -85,14 +85,15 @@ public class ReifiedDependencies implements ModuleGraphListener {
     };
 
     @Override
-    public void onModuleIdQuery(ModuleIdQuery midq) {
+    public void onRootDependence(ModuleIdQuery midq) {
+        // Create empty set for query to detect when there are no matches
         if (roots.get(midq) == null) {
             roots.put(midq, Collections.EMPTY_SET);
         }
     }
 
     @Override
-    public void onRootModuleDependency(ModuleIdQuery midq, ModuleView mv) {
+    public void onMatchingRootDependence(ModuleIdQuery midq, ModuleView mv) {
         Set<ModuleId> mvs = roots.get(midq);
         if (mvs.isEmpty()) {
             mvs = new TreeSet<>(MODULE_ID_COMPARATOR);
@@ -104,7 +105,15 @@ public class ReifiedDependencies implements ModuleGraphListener {
     }
 
     @Override
-    public void onModuleDependency(int depth, ModuleInfo rmi, ViewDependence vd, ModuleView mv) {
+    public void onViewDependence(int depth, ModuleInfo rmi, ViewDependence vd) {
+        // Create empty set for view dependences to detect when there are no matches
+        if (dependenceToMatchingIds.get(vd) == null) {
+            dependenceToMatchingIds.put(vd, Collections.EMPTY_SET);
+        }
+    }
+    
+    @Override
+    public void onMatchingViewDependence(int depth, ModuleInfo rmi, ViewDependence vd, ModuleView mv) {
         Set<ModuleId> mvs = dependenceToMatchingIds.get(vd);
         if (mvs.isEmpty()) {
             mvs = new LinkedHashSet<>();
@@ -124,7 +133,7 @@ public class ReifiedDependencies implements ModuleGraphListener {
     }
     
     private void onModuleInfo(ModuleInfo mi) {
-        final ModuleId mid = mi.defaultView().id();
+        final ModuleId mid = mi.id();
 
         modules.add(mid);
         
@@ -137,13 +146,6 @@ public class ReifiedDependencies implements ModuleGraphListener {
 
         if (!idToView.containsKey(mid)) {
             idToView.put(mid, mi.defaultView());
-        
-            // Create empty set for view dependences to detect when there are no matches
-            for (ViewDependence vd : mi.requiresModules()) {
-                if (dependenceToMatchingIds.get(vd) == null) {
-                    dependenceToMatchingIds.put(vd, Collections.EMPTY_SET);
-                }
-            }        
         }
     }
 

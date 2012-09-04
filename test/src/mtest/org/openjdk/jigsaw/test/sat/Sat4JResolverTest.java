@@ -125,4 +125,141 @@ public class Sat4JResolverTest extends AbstractResolverTest {
         resolve(queryIds("x@1"), 
                 moduleIds("x@1", "y@1"));        
     }
+    
+    @Test
+    public void testViewForRoot() {
+        add(module("x@1").
+                view("xv"));
+
+        resolve(queryIds("xv@1"), moduleIds("x@1"));
+    }
+
+    @Test
+    public void testSimpleView() {
+        add(module("x@1").
+                requires("yv@1"));
+
+        add(module("y@1").view("yv"));
+
+        resolve(queryIds("x@1"), moduleIds("x@1", "y@1"));
+    }
+    
+    @Test
+    public void testSimpleView2() {
+        add(module("x@1").
+                requires("yv@1"));
+
+        add(module("y@1").view("yv"));
+
+        add(module("z@1").requires("y@1"));
+
+        resolve(queryIds("x@1", "z@1"), moduleIds("x@1", "y@1", "z@1"));
+    }
+
+    @Test
+    public void testSimpleView3() {
+        add(module("x@1").
+                requires("yv@1"));
+
+        add(module("y@1").view("yv"));
+
+        add(module("z@1").requires("y@1"));
+
+        resolve(queryIds("z@1", "x@1"), moduleIds("z@1", "y@1", "x@1"));
+    }
+
+    @Test
+    public void testMultipleViews() {
+        add(module("x@1").
+                requires("yv1@1"));
+
+        add(module("z@1").
+                requires("yv2@1"));
+
+        add(module("y@1").view("yv1").view("yv2"));
+
+        resolve(queryIds("x@1", "z@1"), moduleIds("x@1", "y@1", "z@1"));
+    }
+
+    @Test
+    public void testMultipleViewsToSameModule() {
+        add(module("x@1").
+                requires("yv1@1").
+                requires("yv2@1"));
+
+        add(module("y@1").view("yv1").view("yv2"));
+
+        resolve(queryIds("x@1"), moduleIds("x@1", "y@1"));
+    }
+
+    @Test
+    public void testViewWithRange() {
+        add(module("x@1").
+                requires("yv"));
+
+        add(module("y@1").view("yv"));
+
+        add(module("y@2").view("yv"));
+
+        resolve(queryIds("x@1"), moduleIds("x@1", "y@2"));
+    }
+
+    @Test
+    public void testAliasForRoot() {
+        add(module("x@1").
+                alias("xa@1"));
+
+        resolve(queryIds("xa@1"), moduleIds("x@1"));
+    }
+
+    @Test
+    public void testSimpleAlias() {
+        add(module("x@1").
+                requires("ya@1"));
+
+        add(module("y@1").alias("ya@1"));
+
+        resolve(queryIds("x@1"), moduleIds("x@1", "y@1"));
+    }
+    
+    @Test
+    public void testSimpleAlias2() {
+        add(module("x@1").
+                requires("ya@1"));
+
+        add(module("y@1").alias("ya@1"));
+
+        add(module("z@1").requires("y@1"));
+
+        resolve(queryIds("x@1", "z@1"), moduleIds("x@1", "y@1", "z@1"));
+    }
+    
+    @Test
+    public void testSimpleAlias3() {
+        add(module("x@1").
+                requires("ya@1"));
+
+        add(module("y@1").alias("ya@1"));
+
+        add(module("z@1").requires("y@1"));
+
+        resolve(queryIds("z@1", "x@1"), moduleIds("z@1", "y@1", "x@1"));
+    }
+
+    @Test
+    public void testAliasOfViewForRoute() {
+        add(module("x@1").view("xv").alias("xva@1"));
+
+        resolve(queryIds("xva@1"), moduleIds("x@1"));
+    }
+    
+    @Test
+    public void testAliasOfView() {
+        add(module("x@1").
+                requires("yva@1"));
+
+        add(module("y@1").view("yv").alias("yva@1"));
+
+        resolve(queryIds("x@1"), moduleIds("x@1", "y@1"));
+    }
 }

@@ -68,6 +68,10 @@ public abstract class AbstractResolverTest {
         return mlib.add(mib.build());
     }
 
+    MockLibrary add(ModuleInfoBuilder.ModuleViewBuilder mvb) {
+        return add(mvb.mib);
+    }
+
     protected ModuleIdQuery[] queryIds(String... midqNames) {
         Set<ModuleIdQuery> midqs = new LinkedHashSet<>();
         for (String name : midqNames) {
