@@ -82,7 +82,7 @@ public class Sat4JResolver implements Resolver {
             ModuleInfo rmi = rds.idToView.get(rmid).moduleInfo();
             for (ViewDependence vd : rmi.requiresModules()) {
                 Set<ModuleId> mids = rds.dependenceToMatchingIds.get(vd);
-                if (mids != null) {
+                if (!mids.isEmpty()) {
                     List<String> names = new ArrayList<>(mids.size());
                     for (ModuleId mid : mids) {
                         names.add(mid.toString());
@@ -93,15 +93,17 @@ public class Sat4JResolver implements Resolver {
 
                     // ## Views and aliases
 
+                    // ## Permits
+
+                    // ## Optional dependence
+                } else {
+                    // ## No matching modules for dependence    
                     // ## Optional dependence
 
-                    // ## Permits
-                } else {
-                    // ## No matching modules for dependence                    
+                    // ## Is module id query name the name of a non-default view?
                 }
             }
         }
-
 
         // Only one version of a module
         for (Map.Entry<String, Set<ModuleId>> e : rds.nameToIds.entrySet()) {
@@ -125,17 +127,21 @@ public class Sat4JResolver implements Resolver {
             ModuleIdQuery name = e.getKey();
             Set<ModuleId> versions = e.getValue();
 
-            List<String> names = new ArrayList<>(versions.size());
-            for (ModuleId mid : versions) {
-                names.add(mid.toString());
-            }
+            if (!versions.isEmpty()) {
+                List<String> names = new ArrayList<>(versions.size());
+                for (ModuleId mid : versions) {
+                    names.add(mid.toString());
+                }
 
-            helper.clause(
-                    String.format("Module %s to be installed", name.toString()),
-                    names.toArray(new String[0]));
+                helper.clause(
+                        String.format("Module %s to be installed", name.toString()),
+                        names.toArray(new String[0]));
+            } else {
+                // ## No matching modules for root query 
+                // ## Is module id query name the name of a non-default view?
+            }
         }
 
-        // ## No matching modules for root query                    
 
 
         // Objective function

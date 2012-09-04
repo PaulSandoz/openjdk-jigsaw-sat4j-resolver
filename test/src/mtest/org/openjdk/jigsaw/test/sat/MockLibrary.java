@@ -39,18 +39,26 @@ public class MockLibrary extends Library {
 
     public MockLibrary add(ModuleInfo mi) {
         for (ModuleView mv : mi.views()) {
-            String name = mv.id().name();
-            infoForId.put(mv.id(), mi);
+            add(mi, mv.id());
+            
+            for (ModuleId aliasMid : mv.aliases()) {
+                add(mi, aliasMid);
+            }
+        }
+        return this;
+    }
+
+    private void add(ModuleInfo mi, ModuleId mid) {
+            String name = mid.name();
+            infoForId.put(mid, mi);
             List<ModuleId> ls = idsForName.get(name);
             if (ls == null) {
                 ls = new ArrayList<>();
                 idsForName.put(name, ls);
             }
-            ls.add(mv.id());
-        }
-        return this;
+            ls.add(mid);
     }
-
+    
     public MockLibrary add(ModuleInfoBuilder mib) {
         return add(mib.build());
     }
