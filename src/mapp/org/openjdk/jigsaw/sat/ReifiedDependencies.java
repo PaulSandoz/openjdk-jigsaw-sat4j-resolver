@@ -93,7 +93,7 @@ public class ReifiedDependencies implements ModuleGraphListener {
     }
 
     @Override
-    public void onMatchingRootDependence(ModuleIdQuery midq, ModuleView mv) {
+    public void onMatchingRootDependence(ModuleIdQuery midq, ModuleId mid, ModuleView mv) {
         Set<ModuleId> mvs = roots.get(midq);
         if (mvs.isEmpty()) {
             mvs = new TreeSet<>(MODULE_ID_COMPARATOR);
@@ -115,7 +115,7 @@ public class ReifiedDependencies implements ModuleGraphListener {
     }
     
     @Override
-    public void onMatchingViewDependence(int depth, ModuleInfo rmi, ViewDependence vd, ModuleView mv) {
+    public void onMatchingViewDependence(int depth, ModuleInfo rmi, ViewDependence vd, ModuleId mid, ModuleView mv) {
         Set<ModuleId> mvs = dependenceToMatchingIds.get(vd);
         if (mvs.isEmpty()) {
             mvs = new LinkedHashSet<>();

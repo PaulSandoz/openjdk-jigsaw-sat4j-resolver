@@ -206,7 +206,7 @@ public class ModuleGraphTraverser {
         }
 
         protected void process(State s, ModuleInfo mi) {
-            s.mgl.onMatchingRootDependence(midq, getModuleView(mi, mid));
+            s.mgl.onMatchingRootDependence(midq, mid, getModuleView(mi, mid));
         }
 
         protected void process(State s, ModuleInfo mi, ViewDependence vd) {
@@ -255,7 +255,7 @@ public class ModuleGraphTraverser {
 
         @Override
         protected void process(State s, ModuleInfo mi) {
-            s.mgl.onMatchingViewDependence(depth, rmi, vd, getModuleView(mi, dmid));
+            s.mgl.onMatchingViewDependence(depth, rmi, vd, dmid, getModuleView(mi, dmid));
         }
 
         @Override

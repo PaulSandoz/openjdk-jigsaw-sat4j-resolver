@@ -24,6 +24,7 @@
  */
 package org.openjdk.jigsaw.sat;
 
+import java.lang.module.ModuleId;
 import java.lang.module.ModuleIdQuery;
 import java.lang.module.ModuleInfo;
 import java.lang.module.ModuleView;
@@ -37,9 +38,9 @@ public interface ModuleGraphListener {
 
     void onRootDependence(ModuleIdQuery midq);
     
-    void onMatchingRootDependence(ModuleIdQuery midq, ModuleView mv);
+    void onMatchingRootDependence(ModuleIdQuery midq, ModuleId mid, ModuleView mv);
 
     void onViewDependence(int depth, ModuleInfo rmi, ViewDependence vd);
 
-    void onMatchingViewDependence(int depth, ModuleInfo rmi, ViewDependence vd, ModuleView mv);
+    void onMatchingViewDependence(int depth, ModuleInfo rmi, ViewDependence vd, ModuleId mid, ModuleView mv);
 }

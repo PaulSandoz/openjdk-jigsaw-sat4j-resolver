@@ -25,6 +25,7 @@
 package mapp;
 
 import java.io.File;
+import java.lang.module.ModuleId;
 import java.lang.module.ModuleIdQuery;
 import java.lang.module.ModuleInfo;
 import java.lang.module.ModuleView;
@@ -57,7 +58,7 @@ public class App {
             }
 
             @Override
-            public void onMatchingRootDependence(ModuleIdQuery mq, ModuleView mv) {
+            public void onMatchingRootDependence(ModuleIdQuery mq, ModuleId mid, ModuleView mv) {
                 System.out.println(mq + " -> " + mv.id() + " [" + mv.moduleInfo().id() + "]");
             }
 
@@ -66,7 +67,7 @@ public class App {
             }
 
             @Override
-            public void onMatchingViewDependence(int depth, ModuleInfo rmi, ViewDependence vd, ModuleView mv) {
+            public void onMatchingViewDependence(int depth, ModuleInfo rmi, ViewDependence vd, ModuleId mid, ModuleView mv) {
                 for (int i = 0; i < depth; i++) {
                     System.out.print(" ");
                 }
