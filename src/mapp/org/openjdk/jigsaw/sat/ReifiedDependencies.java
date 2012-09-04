@@ -48,7 +48,7 @@ public class ReifiedDependencies implements ModuleGraphListener {
 
     // Map of module view/alias id to module view
     // In topological order of dependency graph traversal (depth first search)
-    // The key set contains all known modules view ids
+    // The key set contains all known modules view/alias ids
     public final Map<ModuleId, ModuleView> idToView;
 
     // Module ids grouped by module name
@@ -99,7 +99,7 @@ public class ReifiedDependencies implements ModuleGraphListener {
             mvs = new TreeSet<>(MODULE_ID_COMPARATOR);
             roots.put(midq, mvs);
         }
-        mvs.add(mv.id());
+        mvs.add(mid);
 
         // ## Aliases are ignored
         
@@ -121,9 +121,7 @@ public class ReifiedDependencies implements ModuleGraphListener {
             mvs = new LinkedHashSet<>();
             dependenceToMatchingIds.put(vd, mvs);
         }
-        mvs.add(mv.id());
-
-        // ## Aliases are ignored
+        mvs.add(mid);
         
         onModuleView(mv);
     }
@@ -133,7 +131,11 @@ public class ReifiedDependencies implements ModuleGraphListener {
 
         if (!idToView.containsKey(mv.id())) {
             idToView.put(mv.id(), mv);
-        }        
+            
+            for (ModuleId amid : mv.aliases()) {
+                idToView.put(amid, mv);
+            }
+        }                
     }
     
     private void onModuleInfo(ModuleInfo mi) {
@@ -150,6 +152,10 @@ public class ReifiedDependencies implements ModuleGraphListener {
 
         if (!idToView.containsKey(mid)) {
             idToView.put(mid, mi.defaultView());
+        
+            for (ModuleId amid : mi.defaultView().aliases()) {
+                idToView.put(amid, mi.defaultView());
+            }
         }
     }
 

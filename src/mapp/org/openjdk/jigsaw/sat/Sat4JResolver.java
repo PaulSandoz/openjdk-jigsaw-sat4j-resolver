@@ -65,6 +65,7 @@ public class Sat4JResolver implements Resolver {
         } catch (ResolverException ex) {
             throw ex;
         } catch (Exception ex) {
+            ex.printStackTrace();
             throw new ResolverException(ex);
         }
     }

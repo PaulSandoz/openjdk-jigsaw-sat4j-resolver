@@ -98,22 +98,21 @@ public class ViewAliasResolverTest extends AbstractResolverTest {
         resolve(queryIds("x@1"), moduleIds("x@1", "y@2"));
     }
 
-    // ## Fix when aliases for views are not ignored
-//    @Test
-//    public void testAliasForSelf() {
-//        add(module("x@1").
-//                requires("xa@1").view("xv").alias("xa@1"));
-//
-//        resolve(queryIds("x@1"), moduleIds("x@1"));
-//    }
-//
-//    @Test
-//    public void testAliasForSelf2() {
-//        add(module("x@1").
-//                requires("xa@1").alias("xa@1"));
-//
-//        resolve(queryIds("xa@1"), moduleIds("x@1"));
-//    }
+    @Test
+    public void testAliasForSelf() {
+        add(module("x@1").
+                requires("xa@1").view("xv").alias("xa@1"));
+
+        resolve(queryIds("x@1"), moduleIds("x@1"));
+    }
+
+    @Test
+    public void testAliasForSelf2() {
+        add(module("x@1").
+                requires("xa@1").alias("xa@1"));
+
+        resolve(queryIds("xa@1"), moduleIds("x@1"));
+    }
 
     @Test
     public void testAliasForRoot() {
