@@ -94,6 +94,10 @@ public class ServiceDependences {
     private Set<ModuleId> getProviderModules(ModuleId mid, Set<ModuleId> providers) throws IOException {
         final ModuleInfo mi = c.readModuleInfo(mid);
 
+        if (mi == null) {
+            return Collections.emptySet();
+        }
+        
         final Set<ServiceDependence> serviceDeps = mi.requiresServices();
         if (!serviceDeps.isEmpty()) {
             for (ServiceDependence sd : mi.requiresServices()) {

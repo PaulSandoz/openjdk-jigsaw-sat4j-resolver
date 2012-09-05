@@ -27,6 +27,7 @@ import org.openjdk.jigsaw.test.sat.NoMatchResolverTest;
 import org.openjdk.jigsaw.test.sat.OptionalResolverTest;
 import org.openjdk.jigsaw.test.sat.PermitResolverTest;
 import org.openjdk.jigsaw.test.sat.RequiresResolverTest;
+import org.openjdk.jigsaw.test.sat.ServiceDependencesTest;
 import org.openjdk.jigsaw.test.sat.ViewAliasResolverTest;
 import org.testng.TestListenerAdapter;
 import org.testng.TestNG;
@@ -43,6 +44,7 @@ public class TestNGLauncher {
                     NoMatchResolverTest.class,
                     PermitResolverTest.class,
                     JDKResolverTest.class,
+                    ServiceDependencesTest.class,
                 });
         testng.addListener(tla);
         testng.run();
