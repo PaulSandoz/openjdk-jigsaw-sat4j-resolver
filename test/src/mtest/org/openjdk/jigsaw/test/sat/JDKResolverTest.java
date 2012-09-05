@@ -33,6 +33,7 @@ import org.openjdk.jigsaw.Library;
 import org.openjdk.jigsaw.SimpleLibrary;
 import org.openjdk.jigsaw.sat.Sat4JResolver;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class JDKResolverTest {
@@ -40,42 +41,33 @@ public class JDKResolverTest {
     ModuleSystem ms = JigsawModuleSystem.instance();
 
     Library mlib;
-    
+
     Sat4JResolver r;
-    
+
     public JDKResolverTest() throws Exception {
-        mlib = SimpleLibrary.open(new File(System.getProperty("test.library")));        
+        mlib = SimpleLibrary.open(new File(System.getProperty("test.library")));
     }
-    
+
     @BeforeMethod
     void before() {
         r = new Sat4JResolver(mlib);
     }
-    
-    @Test
-    public void testBase() throws Exception {
-        Set<ModuleId> mids = r.resolve(queryIds("jdk.base"));
+
+    @DataProvider(name = "roots")
+    public Object[][] createData1() {
+        return new Object[][]{
+                    {"jdk.base"},
+                    {"jdk.jre"},
+                    {"jdk"},
+                    {"mtest"},};
+    }
+
+    @Test(dataProvider = "roots")
+    public void testResolver(String root) throws Exception {
+        Set<ModuleId> mids = r.resolve(queryIds(root));
         System.out.println(mids);
     }
 
-    @Test
-    public void testJRE() throws Exception {
-        Set<ModuleId> mids = r.resolve(queryIds("jdk.jre"));
-        System.out.println(mids);
-    }
-
-    @Test
-    public void testJDK() throws Exception {
-        Set<ModuleId> mids = r.resolve(queryIds("jdk"));
-        System.out.println(mids);
-    }
-
-    @Test
-    public void testMTest() throws Exception {
-        Set<ModuleId> mids = r.resolve(queryIds("mtest"));
-        System.out.println(mids);
-    }
-    
     protected ModuleIdQuery[] queryIds(String... midqNames) {
         Set<ModuleIdQuery> midqs = new LinkedHashSet<>();
         for (String name : midqNames) {

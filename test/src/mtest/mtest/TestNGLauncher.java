@@ -42,7 +42,7 @@ public class TestNGLauncher {
                     OptionalResolverTest.class,
                     NoMatchResolverTest.class,
                     PermitResolverTest.class,
-                    JDKResolverTest.class
+                    JDKResolverTest.class,
                 });
         testng.addListener(tla);
         testng.run();
