@@ -54,7 +54,7 @@ public class JDKResolverTest {
     }
 
     @DataProvider(name = "roots")
-    public Object[][] createData1() {
+    public Object[][] createRoots() {
         return new Object[][]{
                     {"jdk.base"},
                     {"jdk.jre"},
