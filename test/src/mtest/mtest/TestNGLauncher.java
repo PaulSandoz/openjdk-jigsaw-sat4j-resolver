@@ -22,6 +22,7 @@
  */
 package mtest;
 
+import org.openjdk.jigsaw.test.sat.JDKResolverTest;
 import org.openjdk.jigsaw.test.sat.NoMatchResolverTest;
 import org.openjdk.jigsaw.test.sat.OptionalResolverTest;
 import org.openjdk.jigsaw.test.sat.PermitResolverTest;
@@ -40,7 +41,8 @@ public class TestNGLauncher {
                     ViewAliasResolverTest.class,
                     OptionalResolverTest.class,
                     NoMatchResolverTest.class,
-                    PermitResolverTest.class
+                    PermitResolverTest.class,
+                    JDKResolverTest.class
                 });
         testng.addListener(tla);
         testng.run();
