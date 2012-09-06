@@ -32,6 +32,7 @@ import java.lang.module.ModuleSystem;
 import java.lang.module.ModuleView;
 import java.lang.module.ViewDependence;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -60,7 +61,7 @@ public class Sat4JResolver implements Resolver {
     }
 
     @Override
-    public Set<ModuleId> resolve(ModuleIdQuery... midqs) throws ResolverException {
+    public ResolverResult resolve(ModuleIdQuery... midqs) throws ResolverException {
         try {
             return _resolve(midqs);
         } catch (ResolverException ex) {
@@ -71,7 +72,7 @@ public class Sat4JResolver implements Resolver {
         }
     }
 
-    private Set<ModuleId> _resolve(ModuleIdQuery... midqs) throws Exception {
+    private ResolverResult _resolve(ModuleIdQuery... midqs) throws Exception {
         ModuleGraphTraverser t = new ModuleGraphTraverser(l);
         ReifiedDependencies rds = new ReifiedDependencies();
         t.traverse(rds, midqs);
@@ -102,9 +103,9 @@ public class Sat4JResolver implements Resolver {
                             // View or alias to module
                             // ## distinguish between view or alias?
                             viewOrAliasIdToModuleId.put(mid, mi.id());
-                            
+
                         }
-                        
+
                         if (!mv.permits().isEmpty()) {
                             if (!mv.permits().contains(rmi.id().name())) {
                                 Set<ModuleId> npmids = notPermitted.get(mv.id());
@@ -235,9 +236,9 @@ public class Sat4JResolver implements Resolver {
         for (Map.Entry<ModuleId, Set<ModuleId>> e : notPermitted.entrySet()) {
             ModuleId mvid = e.getKey();
             Set<ModuleId> mids = e.getValue();
-            
+
             for (ModuleId mid : mids) {
-                helper.clause(String.format("Module %s is not permitted to depend on %s", mid, mvid), "-" + mvid, "-" + mid);                
+                helper.clause(String.format("Module %s is not permitted to depend on %s", mid, mvid), "-" + mvid, "-" + mid);
             }
         }
 
@@ -249,7 +250,7 @@ public class Sat4JResolver implements Resolver {
                     named(String.format("%s is a view or alias of module %s", e.getKey(), e.getValue()));
         }
 
-        
+
         // Objective function
         // Optimize to prefer newer to older versions
         // ## Make configurable based on phase e.g. compile, install, runtime
@@ -282,7 +283,7 @@ public class Sat4JResolver implements Resolver {
 
         if (helper.hasASolution()) {
             Set<String> names = new LinkedHashSet<>(helper.getASolution());
-            Set<ModuleId> mids = new LinkedHashSet<>();
+            final Set<ModuleId> mids = new LinkedHashSet<>();
 
             // Preserve topological order of solution
             for (ModuleId mid : rds.idToView.keySet()) {
@@ -293,7 +294,17 @@ public class Sat4JResolver implements Resolver {
                 }
             }
 
-            return mids;
+            return new ResolverResult() {
+                @Override
+                public Set<ModuleId> resolvedModuleIds() {
+                    return Collections.unmodifiableSet(mids);
+                }
+                
+                @Override
+                public String toString() {
+                    return mids.toString();
+                }
+            };
         } else {
             // ## Produce meaningful structure that can be processed by javac
             Set<String> why = helper.why();

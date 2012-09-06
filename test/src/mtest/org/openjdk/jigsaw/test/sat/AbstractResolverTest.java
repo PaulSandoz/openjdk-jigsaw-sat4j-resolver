@@ -30,6 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import org.openjdk.jigsaw.JigsawModuleSystem;
 import org.openjdk.jigsaw.sat.ResolverException;
+import org.openjdk.jigsaw.sat.ResolverResult;
 import org.openjdk.jigsaw.sat.Sat4JResolver;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
@@ -50,7 +51,7 @@ public abstract class AbstractResolverTest {
     }
     
     protected void resolve(ModuleIdQuery[] midqs, Set<ModuleId> expectedMids) {
-        Set<ModuleId> mids = r.resolve(midqs);
+        Set<ModuleId> mids = r.resolve(midqs).resolvedModuleIds();
         System.out.println(mids);
         Assert.assertEquals(mids, expectedMids);        
         Assert.assertEquals(new ArrayList<>(mids), 
@@ -61,7 +62,7 @@ public abstract class AbstractResolverTest {
         ResolverException caught = null;
         Set<ModuleId> mids = null;
         try {
-            mids = r.resolve(midqs);
+            mids = r.resolve(midqs).resolvedModuleIds();
         } catch (ResolverException ex) {
             caught = ex;
             System.out.println(caught.getMessage());

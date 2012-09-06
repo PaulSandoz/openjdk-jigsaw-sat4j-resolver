@@ -24,23 +24,20 @@
  */
 package org.openjdk.jigsaw.sat;
 
+import java.lang.module.ModuleId;
+import java.util.Set;
+
 /**
- * An unsuccessful result of resolving.
+ * The successful result of resolving.
  *
  */
-// ## Report resolver errors
-// ## Hints on how to fix errors so resolving may succeed
 // ## Report resolver warnings: errors for optional and service provider dependencies
-public class ResolverException extends RuntimeException {
+public interface ResolverResult {
 
-    public ResolverException() {
-    }
-
-    public ResolverException(String message) {
-        super(message);
-    }
-
-    public ResolverException(Throwable cause) {
-        super(cause);
-    }
+    /**
+     *
+     * @return the unmodifiavle set of resolved module ids.
+     */
+    // ## return Map<ModuleId, ModuleInfo> ?
+    Set<ModuleId> resolvedModuleIds();
 }

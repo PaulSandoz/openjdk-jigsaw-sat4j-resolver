@@ -24,13 +24,27 @@
  */
 package org.openjdk.jigsaw.sat;
 
-import java.lang.module.ModuleId;
 import java.lang.module.ModuleIdQuery;
-import java.util.Set;
 
+/**
+ * Resolve dependencies given a collection of module id queries.
+ *
+ */
 public interface Resolver {
-    // ## return Map<ModuleId, ModuleInfo> ?
-    // ## May need to return more info to explain why optional dependencies
-    // ## failed to resolve
-    Set<ModuleId> resolve(ModuleIdQuery... midqs) throws ResolverException;    
+
+    /**
+     * Resolve dependencies.
+     *
+     * @param midqs the collection of module id queries that are root
+     * dependences. A query id may refer to a module id, module view id or
+     * module alias id.
+     *
+     * @return the result of resolving, if successful. The result will contain
+     * all modules, root modules say, referenced in the root dependences, and
+     * all modules that those root modules depend on directly or transitively.
+     * ## Document service provider modules
+     *
+     * @throws ResolverException if resolving failed.
+     */
+    ResolverResult resolve(ModuleIdQuery... midqs) throws ResolverException;
 }

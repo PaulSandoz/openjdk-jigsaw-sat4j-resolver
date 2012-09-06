@@ -64,7 +64,7 @@ public class JDKResolverTest {
 
     @Test(dataProvider = "roots")
     public void testResolver(String root) {
-        Set<ModuleId> mids = r.resolve(queryIds(root));
+        Set<ModuleId> mids = r.resolve(queryIds(root)).resolvedModuleIds();
         System.out.println(mids);
     }
 
