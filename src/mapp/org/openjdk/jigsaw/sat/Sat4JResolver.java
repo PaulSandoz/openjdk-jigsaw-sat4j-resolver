@@ -179,22 +179,26 @@ public class Sat4JResolver implements Resolver {
         }
 
         // Only one version of a module
-        for (ModuleId rmid : rds.modules) {
-            String name = rmid.name();
-            Set<ModuleId> versions = rds.nameToIds.get(rmid.name());
-            
-            if (versions.size() > 1 || (versions.size() > 0 && optionals.contains(name))) {
+        // Collapse to module names
+        Set<String> midNames = new HashSet<>();
+        for (ModuleId mid : rds.modules) {
+            midNames.add(mid.name());
+        }
+        for (String midName : midNames) {            
+            Set<ModuleId> versions = rds.nameToIds.get(midName);
+
+            if (versions.size() > 1 || (versions.size() > 0 && optionals.contains(midName))) {
                 List<String> names = new ArrayList<>(versions.size());
                 for (ModuleId mid : versions) {
                     names.add("-" + mid.toString());
                 }
 
                 // There is at least one optional dependence on the module
-                if (optionals.contains(name)) {
-                    names.add("-" + "*" + name);
+                if (optionals.contains(midName)) {
+                    names.add("-" + "*" + midName);
                 }
 
-                helper.atLeast(String.format("Only one version of module %s", name),
+                helper.atLeast(String.format("Only one version of module %s", midName),
                         names.size() - 1,
                         names.toArray(new String[0]));
             }
@@ -222,6 +226,7 @@ public class Sat4JResolver implements Resolver {
                     names.add(mid.toString());
                 }
 
+                // (mid1 v mid1 v mid3 v ...)
                 helper.clause(
                         String.format("Module in query %s to be installed", midq),
                         names.toArray(new String[0]));

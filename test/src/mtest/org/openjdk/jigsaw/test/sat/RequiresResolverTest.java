@@ -37,6 +37,17 @@ public class RequiresResolverTest extends AbstractResolverTest {
     }
 
     @Test
+    public void testMultipleRoots() {
+        add(module("x@1"));
+
+        add(module("x@2"));
+
+        add(module("x@3"));
+
+        resolve(queryIds("x@3"), moduleIds("x@3"));
+    }
+
+    @Test
     public void testIntersectingRanges() {
         add(module("a@1").
                 requires("b@<4").
