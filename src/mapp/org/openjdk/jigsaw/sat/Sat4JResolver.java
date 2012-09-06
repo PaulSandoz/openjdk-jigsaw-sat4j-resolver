@@ -93,7 +93,7 @@ public class Sat4JResolver implements Resolver {
         while (!spMids.isEmpty()) {    
             rds.reset();            
             t.traverse(rds, _mids, toMidqs(spMids));
-            rr = _resolve(rds, _mids, true, midqs);
+            rr = _resolve(rds, _mids, true, toMidqs(spMids));
             
             mids = rr.resolvedModuleIds();
             _mids.addAll(mids);
@@ -132,6 +132,7 @@ public class Sat4JResolver implements Resolver {
         Map<ModuleId, Set<ModuleId>> notPermitted = new HashMap<>();
 
         if (optional) {
+            // Assumes when optional == true midqs names correspond to module names
             for (ModuleIdQuery midq : midqs) {
                 optionals.add(midq.name());
             }
@@ -139,7 +140,7 @@ public class Sat4JResolver implements Resolver {
         
         // Resolved modules
         for (ModuleId mid : resolvedMids) {
-            helper.clause(String.format("Module %s is resolved", mid.name()), mid.name());
+            helper.clause(String.format("Module %s is resolved", mid), mid.toString());
         }
         
         // Module dependencies
@@ -287,14 +288,20 @@ public class Sat4JResolver implements Resolver {
                     names.add(mid.toString());
                 }
 
+                if (optional) {
+                    names.add("*" + midq.name());
+                }
+                
                 // (mid1 v mid1 v mid3 v ...)
                 helper.clause(
                         String.format("Module in query %s to be installed", midq),
                         names.toArray(new String[0]));
             } else {
-                // Fail with explicit conflicting clauses
-                helper.clause(String.format("Root dependency %s matches no modules", midq), midq.name());
-                helper.clause(String.format("Root dependency %s failed to resolve", midq), "-" + midq.name());
+                if (!optional) {
+                    // Fail with explicit conflicting clauses
+                    helper.clause(String.format("Root dependency %s matches no modules", midq), midq.name());
+                    helper.clause(String.format("Root dependency %s failed to resolve", midq), "-" + midq.name());
+                }
             }
         }
 

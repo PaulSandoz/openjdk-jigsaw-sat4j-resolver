@@ -203,4 +203,34 @@ public class ServiceResolverTest extends AbstractResolverTest {
 
         resolve(queryIds("x@1"), moduleIds("x@1", "y@1"));
     }
+
+    @Test
+    public void testServiceProviderDependenceNoModule() {
+        add(module("x@1").
+                requiresService("s"));
+
+        add(module("y@1").
+                requires("z").
+                providesService("s", "sImpl"));
+
+        resolve(queryIds("x@1"), moduleIds("x@1"));
+    }
+    
+    @Test
+    public void testServiceProviderDependenceConflict() {
+        add(module("x@1").
+                requires("y@1").
+                requiresService("s"));
+
+        add(module("z@1").
+                requires("y@2").
+                providesService("s", "sImpl"));
+
+        add(module("y@1"));
+        
+        add(module("y@2"));
+        
+        resolve(queryIds("x@1"), moduleIds("x@1", "y@1"));
+    }
+    
 }
