@@ -39,17 +39,20 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * A mutable set of reified dependencies.
- * <p>
- * Such dependencies can be produced from traversing the module dependency
- * graph for a given catalog.
+ * A mutable set of reified dependencies. <p> Such dependencies can be produced
+ * from traversing the module dependency graph for a given catalog.
  */
 public class ReifiedDependencies implements ModuleGraphListener {
 
     // Map of module view/alias id to module view
-    // In topological order of dependency graph traversal (depth first search)
+    // Order of keys is unspecified
     // The key set contains all known modules view/alias ids
     public final Map<ModuleId, ModuleView> idToView;
+
+    // View dependence to matching module view/alias ids
+    // Order of keys is unspecified
+    // The module view/alias ids are sorted by version, from least to greatest
+    public final Map<ViewDependence, Set<ModuleId>> dependenceToMatchingIds;
 
     // Module ids grouped by module name
     // The module ids are sorted by version, from least to greatest
@@ -64,17 +67,21 @@ public class ReifiedDependencies implements ModuleGraphListener {
     // In topological order of dependency graph traversal (depth first search)
     public final Set<ModuleId> modules;
 
-    // View dependence to matching module view/alias ids
-    // Order of keys is unspecified
-    // The module view/alias ids are sorted by version, from least to greatest
-    public final Map<ViewDependence, Set<ModuleId>> dependenceToMatchingIds;
-
     public ReifiedDependencies() {
-        idToView = new LinkedHashMap<>();
+        // Unordered keys
+        // Can be a super set of the information obtained from traversing
+        // the module graph from the root dependence nodes
+        // i.e. reusable
+        idToView = new HashMap<>();
+        dependenceToMatchingIds = new HashMap<>();
         nameToIds = new HashMap<>();
+
+        // Ordered keys and sets
+        // Information obtained from traversing the module graph from the 
+        // root dependence nodes
+        // i.e. not necessarily reusable
         roots = new LinkedHashMap<>();
         modules = new LinkedHashSet<>();
-        dependenceToMatchingIds = new HashMap<>();
     }
 
     private static final Comparator<ModuleId> MODULE_ID_COMPARATOR = new Comparator<ModuleId>() {
@@ -102,7 +109,7 @@ public class ReifiedDependencies implements ModuleGraphListener {
         mvs.add(mid);
 
         // ## Aliases are ignored
-        
+
         onModuleView(mv);
     }
 
@@ -113,7 +120,7 @@ public class ReifiedDependencies implements ModuleGraphListener {
             dependenceToMatchingIds.put(vd, Collections.EMPTY_SET);
         }
     }
-    
+
     @Override
     public void onMatchingViewDependence(int depth, ModuleInfo rmi, ViewDependence vd, ModuleId mid, ModuleView mv) {
         Set<ModuleId> mvs = dependenceToMatchingIds.get(vd);
@@ -122,7 +129,7 @@ public class ReifiedDependencies implements ModuleGraphListener {
             dependenceToMatchingIds.put(vd, mvs);
         }
         mvs.add(mid);
-        
+
         onModuleView(mv);
     }
 
@@ -131,18 +138,18 @@ public class ReifiedDependencies implements ModuleGraphListener {
 
         if (!idToView.containsKey(mv.id())) {
             idToView.put(mv.id(), mv);
-            
+
             for (ModuleId amid : mv.aliases()) {
                 idToView.put(amid, mv);
             }
-        }                
+        }
     }
-    
+
     private void onModuleInfo(ModuleInfo mi) {
         final ModuleId mid = mi.id();
 
         modules.add(mid);
-        
+
         Set<ModuleId> mvs = nameToIds.get(mid.name());
         if (mvs == null) {
             mvs = new TreeSet<>(MODULE_ID_COMPARATOR);
@@ -152,7 +159,7 @@ public class ReifiedDependencies implements ModuleGraphListener {
 
         if (!idToView.containsKey(mid)) {
             idToView.put(mid, mi.defaultView());
-        
+
             for (ModuleId amid : mi.defaultView().aliases()) {
                 idToView.put(amid, mi.defaultView());
             }

@@ -118,7 +118,6 @@ public class Sat4JResolver implements Resolver {
                         }
                     }
 
-                    // (~rmid v mid1 v mid1 v mid3 v ...)
                     List<String> names = new ArrayList<>(mids.size());
                     for (ModuleId mid : mids) {
                         names.add(mid.toString());
@@ -132,6 +131,7 @@ public class Sat4JResolver implements Resolver {
                         names.add("*" + moduleName);
                     }
 
+                    // (~rmid v mid1 v mid1 v mid3 v ...)
                     helper.disjunction(rmid.toString()).
                             implies(names.toArray(new String[0])).
                             named(String.format("Module %s depends on %s", rmid, names.toString()));
@@ -179,10 +179,10 @@ public class Sat4JResolver implements Resolver {
         }
 
         // Only one version of a module
-        for (Map.Entry<String, Set<ModuleId>> e : rds.nameToIds.entrySet()) {
-            String name = e.getKey();
-            Set<ModuleId> versions = e.getValue();
-
+        for (ModuleId rmid : rds.modules) {
+            String name = rmid.name();
+            Set<ModuleId> versions = rds.nameToIds.get(rmid.name());
+            
             if (versions.size() > 1 || (versions.size() > 0 && optionals.contains(name))) {
                 List<String> names = new ArrayList<>(versions.size());
                 for (ModuleId mid : versions) {
@@ -286,11 +286,10 @@ public class Sat4JResolver implements Resolver {
             final Set<ModuleId> mids = new LinkedHashSet<>();
 
             // Preserve topological order of solution
-            for (ModuleId mid : rds.idToView.keySet()) {
+            for (ModuleId mid : rds.modules) {
                 if (names.contains(mid.toString())) {
-                    // Transform module view id to module id to remove
-                    // views from the solution                    
-                    mids.add(rds.idToView.get(mid).moduleInfo().id());
+                    // Ignore +v literal corresponding to view/aliase or optional dependence
+                    mids.add(mid);
                 }
             }
 
