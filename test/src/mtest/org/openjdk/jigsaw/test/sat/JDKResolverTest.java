@@ -26,6 +26,7 @@ import java.io.File;
 import java.lang.module.ModuleId;
 import java.lang.module.ModuleIdQuery;
 import java.lang.module.ModuleSystem;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import org.openjdk.jigsaw.JigsawModuleSystem;
@@ -68,11 +69,11 @@ public class JDKResolverTest {
         System.out.println(mids);
     }
 
-    protected ModuleIdQuery[] queryIds(String... midqNames) {
+    protected Collection<ModuleIdQuery> queryIds(String... midqNames) {
         Set<ModuleIdQuery> midqs = new LinkedHashSet<>();
         for (String name : midqNames) {
             midqs.add(ms.parseModuleIdQuery(name));
         }
-        return midqs.toArray(new ModuleIdQuery[0]);
+        return midqs;
     }
 }

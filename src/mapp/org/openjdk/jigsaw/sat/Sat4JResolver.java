@@ -32,6 +32,7 @@ import java.lang.module.ModuleSystem;
 import java.lang.module.ModuleView;
 import java.lang.module.ViewDependence;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,12 +57,18 @@ public class Sat4JResolver implements Resolver {
 
     private final Library l;
 
+    private final ModuleGraphTraverser t;
+
+    private final ServiceDependences sds;
+
     public Sat4JResolver(Library l) {
         this.l = l;
+        this.t = new ModuleGraphTraverser(l);
+        this.sds = new ServiceDependences(l);
     }
 
     @Override
-    public ResolverResult resolve(ModuleIdQuery... midqs) throws ResolverException {
+    public ResolverResult resolve(Collection<ModuleIdQuery> midqs) throws ResolverException {
         try {
             return _resolve(midqs);
         } catch (ResolverException ex) {
@@ -72,25 +79,79 @@ public class Sat4JResolver implements Resolver {
         }
     }
 
-    private ResolverResult _resolve(ModuleIdQuery... midqs) throws Exception {
-        ModuleGraphTraverser t = new ModuleGraphTraverser(l);
+    private ResolverResult _resolve(Collection<ModuleIdQuery> midqs) throws Exception {
+        final Set<ModuleId> _mids = new LinkedHashSet<>();
         ReifiedDependencies rds = new ReifiedDependencies();
+        
         t.traverse(rds, midqs);
+        ResolverResult rr = _resolve(rds, Collections.EMPTY_SET, false, midqs);
 
+        Set<ModuleId> mids = rr.resolvedModuleIds();
+        _mids.addAll(mids);
+        Set<ModuleId> spMids = sds.getProviderModules(mids);
+        spMids.removeAll(_mids);
+        while (!spMids.isEmpty()) {    
+            rds.reset();            
+            t.traverse(rds, _mids, toMidqs(spMids));
+            rr = _resolve(rds, _mids, true, midqs);
+            
+            mids = rr.resolvedModuleIds();
+            _mids.addAll(mids);
+            spMids = sds.getProviderModules(mids);
+            spMids.removeAll(_mids);
+        }
+        
+        return new ResolverResult() {
+            @Override
+            public Set<ModuleId> resolvedModuleIds() {
+                return _mids;
+            }
+        };
+    }
+
+    private Set<ModuleIdQuery> toMidqs(Collection<ModuleId> mids) {
+        Set<ModuleIdQuery> midqs = new LinkedHashSet<>();
+        for (ModuleId mid : mids) {
+            midqs.add(new ModuleIdQuery(mid.name(), null));
+        }
+        return midqs;
+    }
+
+    private ResolverResult _resolve(ReifiedDependencies rds, 
+            Collection<ModuleId> resolvedMids, 
+            boolean optional, 
+            Collection<ModuleIdQuery> midqs) throws Exception {
         IPBSolver s = new OptToPBSATAdapter(new PseudoOptDecorator(SolverFactory.newDefault()));
-        s.setVerbose(true);
-
         DependencyHelper<String, String> helper = new DependencyHelper<>(s);
         helper.setNegator(StringNegator.instance);
 
+        // ## Remove and use library
         Map<String, String> viewOrAliasNameToModuleName = getViewOrAliasNameToModuleNameMap(rds);
         Map<ModuleId, ModuleId> viewOrAliasIdToModuleId = new HashMap<>();
         Set<String> optionals = new HashSet<>();
         Map<ModuleId, Set<ModuleId>> notPermitted = new HashMap<>();
 
+        if (optional) {
+            for (ModuleIdQuery midq : midqs) {
+                optionals.add(midq.name());
+            }
+        }
+        
+        // Resolved modules
+        for (ModuleId mid : resolvedMids) {
+            helper.clause(String.format("Module %s is resolved", mid.name()), mid.name());
+        }
+        
         // Module dependencies
         for (ModuleId rmid : rds.modules) {
+            // Do not output clauses for dependences of a module 
+            // that is already resolved
+            if (resolvedMids.contains(rmid)) {
+                continue;
+            }
+            
             ModuleInfo rmi = rds.idToView.get(rmid).moduleInfo();
+
             for (ViewDependence vd : rmi.requiresModules()) {
                 Set<ModuleId> mids = rds.dependenceToMatchingIds.get(vd);
                 if (!mids.isEmpty()) {
@@ -180,25 +241,25 @@ public class Sat4JResolver implements Resolver {
 
         // Only one version of a module
         // Collapse to module names
-        Set<String> midNames = new HashSet<>();
+        Set<String> moduleNames = new HashSet<>();
         for (ModuleId mid : rds.modules) {
-            midNames.add(mid.name());
+            moduleNames.add(mid.name());
         }
-        for (String midName : midNames) {            
-            Set<ModuleId> versions = rds.nameToIds.get(midName);
+        for (String moduleName : moduleNames) {
+            Set<ModuleId> versions = rds.nameToIds.get(moduleName);
 
-            if (versions.size() > 1 || (versions.size() > 0 && optionals.contains(midName))) {
+            if (versions.size() > 1 || (versions.size() > 0 && optionals.contains(moduleName))) {
                 List<String> names = new ArrayList<>(versions.size());
                 for (ModuleId mid : versions) {
                     names.add("-" + mid.toString());
                 }
 
                 // There is at least one optional dependence on the module
-                if (optionals.contains(midName)) {
-                    names.add("-" + "*" + midName);
+                if (optionals.contains(moduleName)) {
+                    names.add("-" + "*" + moduleName);
                 }
 
-                helper.atLeast(String.format("Only one version of module %s", midName),
+                helper.atLeast(String.format("Only one version of module %s", moduleName),
                         names.size() - 1,
                         names.toArray(new String[0]));
             }
@@ -247,7 +308,7 @@ public class Sat4JResolver implements Resolver {
             }
         }
 
-        // View and aliases
+        // Views and aliases
         for (Map.Entry<ModuleId, ModuleId> e : viewOrAliasIdToModuleId.entrySet()) {
             // view/alias id => module id
             helper.disjunction(e.getKey().toString()).
@@ -263,17 +324,16 @@ public class Sat4JResolver implements Resolver {
             List<String> names = new ArrayList<>();
             List<Integer> weights = new ArrayList<>();
 
-            for (Map.Entry<String, Set<ModuleId>> e : rds.nameToIds.entrySet()) {
-                String name = e.getKey();
-                Set<ModuleId> mids = e.getValue();
+            for (String moduleName : moduleNames) {
+                Set<ModuleId> versions = rds.nameToIds.get(moduleName);
 
-                int w = mids.size();
-                if (optionals.contains(name)) {
+                int w = versions.size();
+                if (optionals.contains(moduleName)) {
                     // Literal for optional dependence
-                    names.add("*" + name);
+                    names.add("*" + moduleName);
                     weights.add(w + 1);
                 }
-                for (ModuleId mid : mids) {
+                for (ModuleId mid : versions) {
                     names.add(mid.toString());
                     weights.add(w--);
                 }
@@ -303,7 +363,7 @@ public class Sat4JResolver implements Resolver {
                 public Set<ModuleId> resolvedModuleIds() {
                     return Collections.unmodifiableSet(mids);
                 }
-                
+
                 @Override
                 public String toString() {
                     return mids.toString();

@@ -28,6 +28,7 @@ import org.openjdk.jigsaw.test.sat.OptionalResolverTest;
 import org.openjdk.jigsaw.test.sat.PermitResolverTest;
 import org.openjdk.jigsaw.test.sat.RequiresResolverTest;
 import org.openjdk.jigsaw.test.sat.ServiceDependencesTest;
+import org.openjdk.jigsaw.test.sat.ServiceResolverTest;
 import org.openjdk.jigsaw.test.sat.ViewAliasResolverTest;
 import org.testng.TestListenerAdapter;
 import org.testng.TestNG;
@@ -38,13 +39,14 @@ public class TestNGLauncher {
         TestListenerAdapter tla = new TestListenerAdapter();
         TestNG testng = new TestNG();
         testng.setTestClasses(new Class[]{
+                    ServiceDependencesTest.class,
                     RequiresResolverTest.class,
                     ViewAliasResolverTest.class,
                     OptionalResolverTest.class,
                     NoMatchResolverTest.class,
                     PermitResolverTest.class,
                     JDKResolverTest.class,
-                    ServiceDependencesTest.class,
+                    ServiceResolverTest.class,
                 });
         testng.addListener(tla);
         testng.run();

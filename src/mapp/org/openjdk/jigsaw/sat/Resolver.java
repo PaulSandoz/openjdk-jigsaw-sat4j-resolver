@@ -25,6 +25,7 @@
 package org.openjdk.jigsaw.sat;
 
 import java.lang.module.ModuleIdQuery;
+import java.util.Collection;
 
 /**
  * Resolve dependencies given a collection of module id queries.
@@ -46,5 +47,5 @@ public interface Resolver {
      *
      * @throws ResolverException if resolving failed.
      */
-    ResolverResult resolve(ModuleIdQuery... midqs) throws ResolverException;
+    ResolverResult resolve(Collection<ModuleIdQuery> midqs) throws ResolverException;
 }

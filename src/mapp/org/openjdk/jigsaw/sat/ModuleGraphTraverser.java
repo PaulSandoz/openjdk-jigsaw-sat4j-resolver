@@ -30,6 +30,7 @@ import java.lang.module.ModuleInfo;
 import java.lang.module.ModuleView;
 import java.lang.module.ViewDependence;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
@@ -64,8 +65,9 @@ public class ModuleGraphTraverser {
 
         final Deque<Node> stack = new LinkedList<>();
 
-        public State(ModuleGraphListener mgl) {
+        public State(ModuleGraphListener mgl, Collection<ModuleId> previouslyVisited) {
             this.mgl = mgl;
+            visited.addAll(previouslyVisited);
         }
 
         boolean isVisited(ModuleInfo mi) {
@@ -274,11 +276,15 @@ public class ModuleGraphTraverser {
         return null;
     }
 
-    public void traverse(ModuleGraphListener mgl, ModuleIdQuery... midqs) throws ModuleGraphTraversalException {
+    public void traverse(ModuleGraphListener mgl, Collection<ModuleIdQuery> midqs) throws ModuleGraphTraversalException {
+        traverse(mgl, Collections.EMPTY_SET, midqs);
+    }
+    
+    public void traverse(ModuleGraphListener mgl, Collection<ModuleId> previouslyVisited, Collection<ModuleIdQuery> midqs) throws ModuleGraphTraversalException {
         Objects.requireNonNull(mgl);
         Objects.requireNonNull(midqs);
 
-        State s = new State(mgl);
+        State s = new State(mgl, previouslyVisited);
 
         // Add roots, in order of declaration
         for (ModuleIdQuery midq : midqs) {

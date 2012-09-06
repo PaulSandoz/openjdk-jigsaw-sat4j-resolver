@@ -30,6 +30,7 @@ import java.lang.module.ModuleIdQuery;
 import java.lang.module.ModuleInfo;
 import java.lang.module.ModuleView;
 import java.lang.module.ViewDependence;
+import java.util.Collections;
 import org.openjdk.jigsaw.JigsawModuleSystem;
 import org.openjdk.jigsaw.Library;
 import org.openjdk.jigsaw.SimpleLibrary;
@@ -73,10 +74,10 @@ public class App {
                 }
                 System.out.println(rmi.id() + " -> " + vd + " -> " + mv.id() + " [" + mv.moduleInfo().id() + "]");
             }
-        }, rootQuery);
+        }, Collections.singleton(rootQuery));
         
         ReifiedDependencies x = new ReifiedDependencies();
-        t.traverse(x, rootQuery);
+        t.traverse(x, Collections.singleton(rootQuery));
         System.out.println(x);
     }
 }

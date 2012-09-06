@@ -26,11 +26,11 @@ import java.lang.module.ModuleId;
 import java.lang.module.ModuleIdQuery;
 import java.lang.module.ModuleSystem;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import org.openjdk.jigsaw.JigsawModuleSystem;
 import org.openjdk.jigsaw.sat.ResolverException;
-import org.openjdk.jigsaw.sat.ResolverResult;
 import org.openjdk.jigsaw.sat.Sat4JResolver;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
@@ -50,7 +50,7 @@ public abstract class AbstractResolverTest {
         r = new Sat4JResolver(mlib);
     }
     
-    protected void resolve(ModuleIdQuery[] midqs, Set<ModuleId> expectedMids) {
+    protected void resolve(Collection<ModuleIdQuery> midqs, Set<ModuleId> expectedMids) {
         Set<ModuleId> mids = r.resolve(midqs).resolvedModuleIds();
         System.out.println(mids);
         Assert.assertEquals(mids, expectedMids);        
@@ -58,7 +58,7 @@ public abstract class AbstractResolverTest {
                 new ArrayList<>(expectedMids));
     }
     
-    protected void fail(ModuleIdQuery[] midqs) {
+    protected void fail(Collection<ModuleIdQuery> midqs) {
         ResolverException caught = null;
         Set<ModuleId> mids = null;
         try {
@@ -79,12 +79,12 @@ public abstract class AbstractResolverTest {
         return add(mvb.mib);
     }
 
-    protected ModuleIdQuery[] queryIds(String... midqNames) {
+    protected Collection<ModuleIdQuery> queryIds(String... midqNames) {
         Set<ModuleIdQuery> midqs = new LinkedHashSet<>();
         for (String name : midqNames) {
             midqs.add(ms.parseModuleIdQuery(name));
         }
-        return midqs.toArray(new ModuleIdQuery[0]);
+        return midqs;
     }
 
     protected Set<ModuleId> moduleIds(String... midNames) {
