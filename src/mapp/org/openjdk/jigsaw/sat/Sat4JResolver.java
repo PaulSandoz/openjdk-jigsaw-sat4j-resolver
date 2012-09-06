@@ -289,6 +289,7 @@ public class Sat4JResolver implements Resolver {
                 }
 
                 if (optional) {
+                    // Root is optional
                     names.add("*" + midq.name());
                 }
                 
@@ -297,6 +298,7 @@ public class Sat4JResolver implements Resolver {
                         String.format("Module in query %s to be installed", midq),
                         names.toArray(new String[0]));
             } else {
+                // ## This should never occur when optional == false
                 if (!optional) {
                     // Fail with explicit conflicting clauses
                     helper.clause(String.format("Root dependency %s matches no modules", midq), midq.name());
