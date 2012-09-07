@@ -32,6 +32,18 @@ public class NoMatchResolverTest extends AbstractResolverTest {
     }
 
     @Test
+    public void testRootAbsent2() {
+        fail(queryIds("a@1", "b@1"));
+    }
+
+    @Test
+    public void testRootAbsent3() {
+        add(module("a@1"));
+                
+        fail(queryIds("a@1", "b@1"));
+    }
+
+    @Test
     public void testAbsent() {
         add(module("a@1").
                 requires("b@1"));
