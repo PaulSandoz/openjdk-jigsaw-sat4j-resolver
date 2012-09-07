@@ -24,6 +24,7 @@
  */
 package org.openjdk.jigsaw.sat;
 
+import java.io.IOException;
 import java.lang.module.Dependence.Modifier;
 import java.lang.module.ModuleId;
 import java.lang.module.ModuleIdQuery;
@@ -109,9 +110,10 @@ public class Sat4JResolver implements Resolver {
                 trace(1, "Phase %d: resolving service provider modules %s", p, spMids);
             }
             
-            rds.reset();            
-            t.traverse(rds, _mids, toMidqs(spMids));
-            rr = _resolve(rds, _mids, true, toMidqs(spMids));
+            rds.reset();
+            Set<ModuleIdQuery> spMidqs = toMidqs(spMids);
+            t.traverse(rds, _mids, spMidqs);
+            rr = _resolve(rds, _mids, true, spMidqs);
             
             if (tracing) {
                 trace(1, "Phase %d: result: %s", p++, rr.resolvedModuleIds());
@@ -170,8 +172,6 @@ public class Sat4JResolver implements Resolver {
         DependencyHelper<String, String> helper = new DependencyHelper<>(s, false);
         helper.setNegator(StringNegator.instance);
 
-        // ## Remove and use library
-        Map<String, String> viewOrAliasNameToModuleName = getViewOrAliasNameToModuleNameMap(rds);
         Map<ModuleId, ModuleId> viewOrAliasIdToModuleId = new HashMap<>();
         Set<String> optionals = new HashSet<>();
         Map<ModuleId, Set<ModuleId>> notPermitted = new HashMap<>();
@@ -232,7 +232,9 @@ public class Sat4JResolver implements Resolver {
                     // Optional dependence
                     // Add the literal "*" + mid to represent absense
                     if (isOptional) {
-                        String moduleName = viewOrAliasNameToModuleName.get(vd.query().name());
+                        String moduleName = rds.idToView.get(mids.iterator().next()).
+                                moduleInfo().id().name();
+                        
                         optionals.add(moduleName);
                         names.add("*" + moduleName);
                     }
@@ -248,7 +250,7 @@ public class Sat4JResolver implements Resolver {
                             isOptional ? "Optional view" : "View", vd.query(), rmid, mids),
                             names.toArray(new String[0]));
                 } else {
-                    String moduleName = viewOrAliasNameToModuleName.get(vd.query().name());
+                    String moduleName = getModuleNameFromMidq(vd.query());
                     if (moduleName != null) {
                         // 1 or more modules are present but those do not match the query
 
@@ -558,22 +560,21 @@ public class Sat4JResolver implements Resolver {
         }
     }
     
-    Map<String, String> getViewOrAliasNameToModuleNameMap(ReifiedDependencies rds) {
-        Map<String, String> names = new HashMap<>();
-        for (ModuleId mid : rds.modules) {
-            ModuleInfo mi = rds.idToView.get(mid).moduleInfo();
-            
-            names.put(mid.name(), mid.name());
-            
-            for (ModuleView mv : mi.views()) {
-                names.put(mv.id().name(), mid.name());
-                
-                for (ModuleId aliasMid : mv.aliases()) {
-                    names.put(aliasMid.name(), mid.name());
-                }
+    private String getModuleNameFromMidq(ModuleIdQuery midq) {
+        return getModuleNameFromViewAliasName(midq.name());
+    }
+    
+    private String getModuleNameFromViewAliasName(String name) {
+        try {
+            List<ModuleId> mids = l.findModuleIds(name);
+            if (!mids.isEmpty()) {
+                return l.readModuleInfo(mids.get(0)).id().name();
             }
+            
+            return null;
+        } catch (IOException ex) {
+            // ## 
+            throw new RuntimeException(ex);
         }
-        
-        return names;
     }
 }
