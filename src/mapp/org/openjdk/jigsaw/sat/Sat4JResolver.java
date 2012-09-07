@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Set;
 import org.openjdk.jigsaw.JigsawModuleSystem;
 import org.openjdk.jigsaw.Library;
+import static org.openjdk.jigsaw.sat.SatTrace.*;
 import org.sat4j.pb.IPBSolver;
 import org.sat4j.pb.OptToPBSATAdapter;
 import org.sat4j.pb.PseudoOptDecorator;
@@ -70,6 +71,10 @@ public class Sat4JResolver implements Resolver {
     @Override
     public ResolverResult resolve(Collection<ModuleIdQuery> midqs) throws ResolverException {
         try {
+            if (tracing) {
+                trace(1, "Resolving module queries %s", midqs);
+            }
+            
             return _resolve(midqs);
         } catch (ResolverException ex) {
             throw ex;
@@ -83,17 +88,34 @@ public class Sat4JResolver implements Resolver {
         final Set<ModuleId> _mids = new LinkedHashSet<>();
         ReifiedDependencies rds = new ReifiedDependencies();
         
+        if (tracing) {
+            trace(1, "Phase 0: resolving application");
+        }        
+        
         t.traverse(rds, midqs);
         ResolverResult rr = _resolve(rds, Collections.EMPTY_SET, false, midqs);
+
+        if (tracing) {
+            trace(1, "Phase 0: result: %s", rr.resolvedModuleIds());
+        }        
 
         Set<ModuleId> mids = rr.resolvedModuleIds();
         _mids.addAll(mids);
         Set<ModuleId> spMids = sds.getProviderModules(mids);
         spMids.removeAll(_mids);
+        int p = 1;
         while (!spMids.isEmpty()) {    
+            if (tracing) {
+                trace(1, "Phase %d: resolving service provider modules %s", p, spMids);
+            }
+            
             rds.reset();            
             t.traverse(rds, _mids, toMidqs(spMids));
             rr = _resolve(rds, _mids, true, toMidqs(spMids));
+            
+            if (tracing) {
+                trace(1, "Phase %d: result: %s", p++, rr.resolvedModuleIds());
+            }        
             
             mids = rr.resolvedModuleIds();
             _mids.addAll(mids);
@@ -101,6 +123,10 @@ public class Sat4JResolver implements Resolver {
             spMids.removeAll(_mids);
         }
         
+        if (tracing) {
+            trace(1, "Resolved modules: %s", _mids);
+        }        
+
         return new ResolverResult() {
             @Override
             public Set<ModuleId> resolvedModuleIds() {
@@ -117,12 +143,31 @@ public class Sat4JResolver implements Resolver {
         return midqs;
     }
 
+    private String join(Collection<? extends Object> os, String sep) {
+        StringBuilder sb = new StringBuilder();
+        
+        for (Object o : os) {
+            if (sb.length() > 0) {
+                sb.append(sep);
+            }
+            sb.append(o);
+        }
+        return sb.toString();
+    }
+    
     private ResolverResult _resolve(ReifiedDependencies rds, 
             Collection<ModuleId> resolvedMids, 
             boolean optional, 
             Collection<ModuleIdQuery> midqs) throws Exception {
+        if (tracing) {
+            trace(1, 1, "Resolving %squeries %s with modules %s", 
+                    optional ? "optional " : "", midqs, rds.modules);
+            trace(1, 1, "Using previously resolved modules %s", resolvedMids);            
+        }        
+        
         IPBSolver s = new OptToPBSATAdapter(new PseudoOptDecorator(SolverFactory.newDefault()));
-        DependencyHelper<String, String> helper = new DependencyHelper<>(s);
+        s.setVerbose(true);
+        DependencyHelper<String, String> helper = new DependencyHelper<>(s, false);
         helper.setNegator(StringNegator.instance);
 
         // ## Remove and use library
@@ -132,15 +177,10 @@ public class Sat4JResolver implements Resolver {
         Map<ModuleId, Set<ModuleId>> notPermitted = new HashMap<>();
 
         if (optional) {
-            // Assumes when optional == true midqs names correspond to module names
+            // ## Assumes when optional == true midqs names correspond to module names
             for (ModuleIdQuery midq : midqs) {
                 optionals.add(midq.name());
             }
-        }
-        
-        // Resolved modules
-        for (ModuleId mid : resolvedMids) {
-            helper.clause(String.format("Module %s is resolved", mid), mid.toString());
         }
         
         // Module dependencies
@@ -193,6 +233,11 @@ public class Sat4JResolver implements Resolver {
                         names.add("*" + moduleName);
                     }
 
+                    if (tracing) {
+                        trace(1, 2, "# Clause: Module %s depends on modules %s", rmid, names.toString());
+                        trace(1, 2, "(~%s v %s)", rmid, join(names, " v "));
+                    }
+                    
                     // (~rmid v mid1 v mid1 v mid3 v ...)
                     helper.disjunction(rmid.toString()).
                             implies(names.toArray(new String[0])).
@@ -203,11 +248,22 @@ public class Sat4JResolver implements Resolver {
                         // 1 or more modules are present but those do not match the query
 
                         if (vd.modifiers().contains(Modifier.OPTIONAL)) {
+                            if (tracing) {
+                                trace(1, 2, "# Clause: Module %s has an optional dependency %s, which matches no modules", rmid, vd.query());
+                                trace(1, 2, "(~%s v *%s)", rmid, vd.query());
+                            }
+                            
                             helper.disjunction(rmid.toString()).
                                     implies("*" + moduleName).
                                     named(String.format("Module %s has an optional dependency %s, which matches no modules", rmid, vd.query()));
                             optionals.add(moduleName);
                         } else {
+                            if (tracing) {
+                                trace(1, 2, "# Clause: Module %s has an dependency %s, which matches no modules", rmid, vd.query());
+                                trace(1, 2, "(~%s v *%s)", rmid, vd.query());
+                                trace(1, 2, "(~%s v ~*%s)", rmid, vd.query());
+                            }
+                            
                             // Fail with explicit conflicting clauses
                             helper.disjunction(rmid.toString()).
                                     implies("*" + moduleName).
@@ -223,10 +279,21 @@ public class Sat4JResolver implements Resolver {
                         // library or no modules in the dependency graph
                         // The former can occur if all queries fail to match
                         if (vd.modifiers().contains(Modifier.OPTIONAL)) {
+                            if (tracing) {
+                                trace(1, 2, "# Clause: Module %s has an optional dependency %s, which matches no modules", rmid, vd.query());
+                                trace(1, 2, "(~%s v *%s)", rmid, vd.query().name());
+                            }
+
                             helper.disjunction(rmid.toString()).
                                     implies("*" + vd.query().name()).
                                     named(String.format("Module %s has an optional dependency %s, which matches no modules", rmid, vd.query()));
                         } else {
+                            if (tracing) {
+                                trace(1, 2, "# Clause: Module %s has an dependency %s, which matches no modules", rmid, vd.query());
+                                trace(1, 2, "(~%s v *%s)", rmid, vd.query().name());
+                                trace(1, 2, "(~%s v ~*%s)", rmid, vd.query().name());
+                            }
+
                             // Fail with explicit conflicting clauses
                             helper.disjunction(rmid.toString()).
                                     implies("*" + vd.query().name()).
@@ -242,7 +309,7 @@ public class Sat4JResolver implements Resolver {
 
         // Only one version of a module
         // Collapse to module names
-        Set<String> moduleNames = new HashSet<>();
+        Set<String> moduleNames = new LinkedHashSet<>();
         for (ModuleId mid : rds.modules) {
             moduleNames.add(mid.name());
         }
@@ -260,12 +327,28 @@ public class Sat4JResolver implements Resolver {
                     names.add("-" + "*" + moduleName);
                 }
 
+                if (tracing) {
+                    trace(1, 2, "# Clause: Only one version of module %s", moduleName);
+                    trace(1, 2, "(%s) >= %d", join(names, " v "), names.size() - 1);
+                }
+                            
                 helper.atLeast(String.format("Only one version of module %s", moduleName),
                         names.size() - 1,
                         names.toArray(new String[0]));
             }
         }
 
+        // Resolved modules
+        for (ModuleId mid : resolvedMids) {
+            // ## Should be blocking clauses that are not part of the solution?
+            if (tracing) {
+                trace(1, 2, "# Clause: Previously resolved module %s", mid);
+                trace(1, 2, "(%s)", mid);
+            }
+            
+            helper.clause(String.format("Module %s is resolved", mid), mid.toString());
+        }
+        
         // Root modules to be installed
         for (Map.Entry<ModuleIdQuery, Set<ModuleId>> e : rds.roots.entrySet()) {
             ModuleIdQuery midq = e.getKey();
@@ -293,6 +376,11 @@ public class Sat4JResolver implements Resolver {
                     names.add("*" + midq.name());
                 }
                 
+                if (tracing) {
+                    trace(1, 2, "# Clause: Root modules to be installed matching query %s", midq);
+                    trace(1, 2, "(%s)", join(names, " v "));
+                }
+                
                 // (mid1 v mid1 v mid3 v ...)
                 helper.clause(
                         String.format("Module in query %s to be installed", midq),
@@ -300,6 +388,12 @@ public class Sat4JResolver implements Resolver {
             } else {
                 // ## This should never occur when optional == false
                 if (!optional) {
+                    if (tracing) {
+                        trace(1, 2, "# Clause: Root dependency %s matches no modules", midq);
+                        trace(1, 2, "(%s)", midq.name());
+                        trace(1, 2, "(~%s)", midq.name());
+                    }
+                    
                     // Fail with explicit conflicting clauses
                     helper.clause(String.format("Root dependency %s matches no modules", midq), midq.name());
                     helper.clause(String.format("Root dependency %s failed to resolve", midq), "-" + midq.name());
@@ -313,6 +407,11 @@ public class Sat4JResolver implements Resolver {
             Set<ModuleId> mids = e.getValue();
 
             for (ModuleId mid : mids) {
+                if (tracing) {
+                    trace(1, 2, "# Clause: Module %s is not permitted to depend on %s", mid, mvid);
+                    trace(1, 2, "(~%s v ~%s)", mvid, mid);
+                }
+                
                 helper.clause(String.format("Module %s is not permitted to depend on %s", mid, mvid), "-" + mvid, "-" + mid);
             }
         }
@@ -320,9 +419,12 @@ public class Sat4JResolver implements Resolver {
         // Views and aliases
         for (Map.Entry<ModuleId, ModuleId> e : viewOrAliasIdToModuleId.entrySet()) {
             // view/alias id => module id
-            helper.disjunction(e.getKey().toString()).
-                    implies(e.getValue().toString()).
-                    named(String.format("%s is a view or alias of module %s", e.getKey(), e.getValue()));
+            if (tracing) {
+                trace(1, 2, "# Clause: %s is a view or alias of module %s", e.getKey(), e.getValue());
+                trace(1, 2, "(~%s v %s)", e.getKey(), e.getValue());
+            }
+            
+            helper.clause(String.format("%s is a view or alias of module %s", e.getKey(), e.getValue()), "-" + e.getKey(), "" + e.getValue());
         }
 
 
@@ -340,7 +442,8 @@ public class Sat4JResolver implements Resolver {
                 if (optionals.contains(moduleName)) {
                     // Literal for optional dependence
                     names.add("*" + moduleName);
-                    weights.add(w + 1);
+                    // > than the sum of all the other non-optional weights
+                    weights.add(Integer.MAX_VALUE);
                 }
                 for (ModuleId mid : versions) {
                     names.add(mid.toString());
@@ -348,6 +451,18 @@ public class Sat4JResolver implements Resolver {
                 }
             }
 
+            if (tracing) {
+                trace(1, 2, "# Objective function");
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < names.size(); i++) {
+                    if (sb.length() > 0) {
+                        sb.append(", ");
+                    }
+                    sb.append(weights.get(i)).append(".").append(names.get(i));
+                }
+                trace(1, 2, sb.toString());
+            }
+            
             WeightedObject<String>[] wos = new WeightedObject[names.size()];
             for (int i = 0; i < names.size(); i++) {
                 wos[i] = WeightedObject.newWO(names.get(i), weights.get(i));
@@ -357,6 +472,9 @@ public class Sat4JResolver implements Resolver {
 
         if (helper.hasASolution()) {
             Set<String> names = new LinkedHashSet<>(helper.getASolution());
+            if (tracing) {
+                trace(1, 1, "Solution: %s", names);
+            }
             final Set<ModuleId> mids = new LinkedHashSet<>();
 
             // Preserve topological order of solution
@@ -380,8 +498,21 @@ public class Sat4JResolver implements Resolver {
             };
         } else {
             // ## Produce meaningful structure that can be processed by javac
-            Set<String> why = helper.why();
-            throw new ResolverException(why.toString());
+            try {
+                Set<String> why = helper.why();
+                
+                if (tracing) {
+                    trace(1, 1, "No solution: %s", why);
+                }
+                
+                throw new ResolverException(why.toString());
+            } catch (UnsupportedOperationException ex) {
+                if (tracing) {
+                    trace(1, 1, "No solution");
+                }
+                
+                throw new ResolverException();
+            }
         }
     }
 

@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import org.openjdk.jigsaw.Catalog;
+import org.openjdk.jigsaw.sat.SatTrace;
 
 /**
  * Traverses the module graph, for a given set of root queries, using a 
@@ -47,9 +48,6 @@ import org.openjdk.jigsaw.Catalog;
  *
  */
 public class ModuleGraphTraverser {
-
-    // ## Hook up to Jigsaw tracing
-    private boolean tracing = false;
 
     private final Catalog cat;
 
@@ -97,12 +95,16 @@ public class ModuleGraphTraverser {
 
         abstract void process(State state) throws Exception;
 
+        boolean tracing() {
+            return SatTrace.tracing;
+        }
+        
         void trace(Object o) {
-            if (!tracing) {
+            if (!tracing()) {
                 return;
             }
 
-            System.out.println(b(depth, o).toString());
+            SatTrace.trace(1, depth, o.toString());
         }
 
         StringBuilder b(int depth, Object o) {
@@ -176,13 +178,13 @@ public class ModuleGraphTraverser {
             process(s, mi);
 
             if (s.isVisited(mi)) {
-                if (tracing) {
+                if (tracing()) {
                     trace(mid + " -> module " + mi.id() + " VISITED");
                 }
                 return;
             }
 
-            if (tracing) {
+            if (tracing()) {
                 trace(mid + " -> module " + mi.id());
 
                 for (ModuleView mv : mi.views()) {
@@ -200,7 +202,7 @@ public class ModuleGraphTraverser {
             // Preserve declared order on stack
             Collections.reverse(vds);
             for (ViewDependence vd : vds) {
-                if (tracing) {
+                if (tracing()) {
                     trace(vd);
                 }
                 process(s, mi, vd);

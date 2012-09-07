@@ -233,4 +233,43 @@ public class ServiceResolverTest extends AbstractResolverTest {
         resolve(queryIds("x@1"), moduleIds("x@1", "y@1"));
     }
     
+
+    @Test
+    public void testServiceProviderDependenceConflict2() {
+        add(module("x@1").
+                requiresService("s"));
+
+        add(module("z@1").
+                requires("x@2").
+                providesService("s", "sImpl"));
+
+        add(module("x@2"));
+        
+        resolve(queryIds("x@1"), moduleIds("x@1"));
+    }
+    
+    @Test
+    // ## Solutions [x@1, b@1, y@2] or [x@1, a@1, y@1] are both valid.
+    // But the optional one, the former, is not selected
+    // Seems to be a bug in the XPlainPB wrapper used when the
+    // DependencyHelper is enabled for explanation, since there is no
+    // looping around the solutions to find the optimal one
+    public void testServiceProviderDependenceConflict3() {
+        add(module("x@1").
+                requiresService("s"));
+
+        add(module("a@1").
+                requires("y@1").
+                providesService("s", "sImpl"));
+
+        add(module("b@1").
+                requires("y@2").
+                providesService("s", "sImpl"));
+
+        add(module("y@1"));
+        
+        add(module("y@2"));
+        
+        resolve(queryIds("x@1"), moduleIds("x@1", "b@1", "y@2"));
+    }
 }

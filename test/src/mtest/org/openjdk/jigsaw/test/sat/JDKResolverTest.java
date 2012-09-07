@@ -60,7 +60,8 @@ public class JDKResolverTest {
                     {"jdk.base"},
                     {"jdk.jre"},
                     {"jdk"},
-                    {"mtest"},};
+                    {"mtest"},
+        };
     }
 
     @Test(dataProvider = "roots")
