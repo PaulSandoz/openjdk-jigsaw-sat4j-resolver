@@ -256,7 +256,7 @@ public class Sat4JResolver implements Resolver {
                             if (tracing) {
                                 trace(1, 2, "# Clause: Optional view dependence %s, of module %s, matches no modules",
                                         vd.query(), rmid);
-                                trace(1, 2, "(~%s v *%s)", rmid, moduleName);
+                                trace(1, 2, "(-%s v *%s)", rmid, moduleName);
                             }
                             
                             optionals.add(moduleName);
@@ -269,8 +269,8 @@ public class Sat4JResolver implements Resolver {
                             if (tracing) {
                                 trace(1, 2, "# Clauses: View dependence %s, of module %s, matches no modules",
                                         vd.query(), rmid);
-                                trace(1, 2, "(~%s v *%s)", rmid, moduleName);
-                                trace(1, 2, "(~%s v ~*%s)", rmid, moduleName);
+                                trace(1, 2, "(-%s v *%s)", rmid, moduleName);
+                                trace(1, 2, "(-%s v -*%s)", rmid, moduleName);
                             }
 
                             // Fail with explicit conflicting clauses
@@ -295,7 +295,7 @@ public class Sat4JResolver implements Resolver {
                             if (tracing) {
                                 trace(1, 2, "# Clause: Optional view dependence %s, of module %s, matches no modules",
                                         vd.query(), rmid);
-                                trace(1, 2, "(~%s v *%s)", rmid, moduleName);
+                                trace(1, 2, "(-%s v *%s)", rmid, moduleName);
                             }
                             
                             helper.clause(
@@ -306,8 +306,8 @@ public class Sat4JResolver implements Resolver {
                             if (tracing) {
                                 trace(1, 2, "# Clauses: View dependence %s, of module %s, matches no modules",
                                         vd.query(), rmid);
-                                trace(1, 2, "(~%s v *%s)", rmid, moduleName);
-                                trace(1, 2, "(~%s v ~*%s)", rmid, moduleName);
+                                trace(1, 2, "(-%s v *%s)", rmid, moduleName);
+                                trace(1, 2, "(-%s v -*%s)", rmid, moduleName);
                             }
 
                             // Fail with explicit conflicting clauses
@@ -416,8 +416,8 @@ public class Sat4JResolver implements Resolver {
                 if (!optional) {
                     if (tracing) {
                         trace(1, 2, "# Clauses: Root dependence %s matches no modules", midq);
-                        trace(1, 2, "(~%s v *%s)", midq.name(), midq.name());
-                        trace(1, 2, "(~%s v ~*%s)", midq.name(), midq.name());
+                        trace(1, 2, "(-%s v *%s)", midq.name(), midq.name());
+                        trace(1, 2, "(-%s v -*%s)", midq.name(), midq.name());
                         trace(1, 2, "(%s)", midq.name());
                     }
 
@@ -444,7 +444,7 @@ public class Sat4JResolver implements Resolver {
             for (ModuleId mid : mids) {
                 if (tracing) {
                     trace(1, 2, "# Clause: Module %s is not permitted to depend on %s", mid, mvid);
-                    trace(1, 2, "(~%s v ~%s)", mvid, mid);
+                    trace(1, 2, "(-%s v -%s)", mvid, mid);
                 }
                 
                 helper.clause(
@@ -459,7 +459,7 @@ public class Sat4JResolver implements Resolver {
             ModuleId mid = e.getValue();
             if (tracing) {
                 trace(1, 2, "# Clause: Module %s is a view or alias of module %s", vamid, mid);
-                trace(1, 2, "(~%s v %s)", vamid, mid);
+                trace(1, 2, "(-%s v %s)", vamid, mid);
             }
             
             helper.clause(
