@@ -39,14 +39,14 @@ public class TestNGLauncher {
         TestListenerAdapter tla = new TestListenerAdapter();
         TestNG testng = new TestNG();
         testng.setTestClasses(new Class[]{
-//                    ServiceDependencesTest.class,
-//                    RequiresResolverTest.class,
+                    ServiceDependencesTest.class,
+                    RequiresResolverTest.class,
                     ViewAliasResolverTest.class,
-//                    OptionalResolverTest.class,
-//                    NoMatchResolverTest.class,
-//                    PermitResolverTest.class,
-//                    JDKResolverTest.class,
-//                    ServiceResolverTest.class,
+                    OptionalResolverTest.class,
+                    NoMatchResolverTest.class,
+                    PermitResolverTest.class,
+                    JDKResolverTest.class,
+                    ServiceResolverTest.class,
                 });
         testng.addListener(tla);
         testng.run();
