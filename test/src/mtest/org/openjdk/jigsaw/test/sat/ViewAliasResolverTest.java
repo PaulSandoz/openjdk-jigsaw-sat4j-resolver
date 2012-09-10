@@ -35,7 +35,7 @@ public class ViewAliasResolverTest extends AbstractResolverTest {
 
         resolve(queryIds("x@1"), moduleIds("x@1", "y@1"));
     }
-    
+
     @Test
     public void testSimpleView2() {
         add(module("x@1").
@@ -129,7 +129,7 @@ public class ViewAliasResolverTest extends AbstractResolverTest {
 
         resolve(queryIds("x@1"), moduleIds("x@1", "y@1"));
     }
-    
+
     @Test
     public void testSimpleAlias2() {
         add(module("x@1").
@@ -141,7 +141,7 @@ public class ViewAliasResolverTest extends AbstractResolverTest {
 
         resolve(queryIds("x@1", "z@1"), moduleIds("x@1", "y@1", "z@1"));
     }
-    
+
     @Test
     public void testSimpleAlias3() {
         add(module("x@1").
@@ -155,12 +155,12 @@ public class ViewAliasResolverTest extends AbstractResolverTest {
     }
 
     @Test
-    public void testAliasOfViewForRoute() {
+    public void testAliasOfViewForRoot() {
         add(module("x@1").view("xv").alias("xva@1"));
 
         resolve(queryIds("xva@1"), moduleIds("x@1"));
     }
-    
+
     @Test
     public void testAliasOfView() {
         add(module("x@1").
@@ -169,5 +169,119 @@ public class ViewAliasResolverTest extends AbstractResolverTest {
         add(module("y@1").view("yv").alias("yva@1"));
 
         resolve(queryIds("x@1"), moduleIds("x@1", "y@1"));
+    }
+
+    @Test
+    public void testAliasWithVersions() {
+        add(module("x@1").
+                requires("a"));
+
+        add(module("b@1").
+                alias("a@1"));
+
+        add(module("b@2").
+                alias("a@2"));
+
+        add(module("b@3").
+                alias("a@3"));
+
+        resolve(queryIds("x@1"), moduleIds("x@1", "b@3"));
+    }
+
+    @Test
+    public void testAliasWithVersionsConstrained() {
+        add(module("x@1").
+                requires("a"));
+
+        add(module("y@1").
+                requires("a@3"));
+
+        add(module("b@1").
+                alias("a@3"));
+
+        add(module("b@2").
+                alias("a@2"));
+
+        add(module("b@3").
+                alias("a@1"));
+
+        resolve(queryIds("x@1", "y@1"), moduleIds("x@1", "b@1", "y@1"));
+    }
+    
+    @Test
+    public void testAliasWithVersionsAndDifferentModules() {
+        add(module("x@1").
+                requires("a@1"));
+
+        add(module("y@1").
+                requires("a@3"));
+        
+        add(module("b@1").
+                alias("a@1"));
+
+        add(module("c@1").
+                alias("a@2"));
+
+        add(module("d@1").
+                alias("a@3"));
+        
+        resolve(queryIds("x@1", "y@1"), moduleIds("x@1", "b@1", "y@1", "d@1"));
+    }
+    
+    @Test
+    public void testOptional() {
+        add(module("x@1").
+                requiresOptional("a@1"));
+        
+        add(module("y@1").
+                requiresOptional("a@3"));
+        
+        add(module("b@1").
+                alias("a@1").
+                requires("d@1"));
+        
+        add(module("c@1").
+                alias("a@3"));
+        
+        resolve(queryIds("x@1", "y@1"), moduleIds("x@1", "y@1", "c@1"));
+   }
+    
+    @Test
+    public void testOptionalWithDifferentModules() {
+        add(module("x@1").
+                requiresOptional("a@<3"));
+
+        add(module("y@1").
+                requires("a@3"));
+
+        add(module("b@1").
+                alias("a@3"));
+
+        add(module("d@1").
+                alias("a@1").
+                requires("e@1"));
+
+        resolve(queryIds("x@1", "y@1"), moduleIds("x@1", "y@1", "b@1"));
+    }
+
+    @Test
+    public void testOptionalWithVersions() {
+        add(module("x@1").
+                requiresOptional("a@<3"));
+
+        add(module("y@1").
+                requires("a@3"));
+
+        add(module("b@1").
+                alias("a@3"));
+
+        add(module("b@2").
+                alias("a@2"));
+
+        add(module("b@3").
+                alias("a@1").
+                requires("d@1"));
+
+        fail(queryIds("x@1", "y@1"));
     }
 }
