@@ -189,6 +189,23 @@ public class ViewAliasResolverTest extends AbstractResolverTest {
     }
 
     @Test
+    public void testAliasWithVersionsReverse() {
+        add(module("x@1").
+                requires("a"));
+
+        add(module("b@1").
+                alias("a@3"));
+
+        add(module("b@2").
+                alias("a@2"));
+
+        add(module("b@3").
+                alias("a@1"));
+
+        resolve(queryIds("x@1"), moduleIds("x@1", "b@3"));
+    }
+    
+    @Test
     public void testAliasWithVersionsConstrained() {
         add(module("x@1").
                 requires("a"));
