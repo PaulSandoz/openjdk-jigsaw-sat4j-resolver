@@ -301,4 +301,23 @@ public class ViewAliasResolverTest extends AbstractResolverTest {
 
         fail(queryIds("x@1", "y@1"));
     }
+    
+    @Test
+    // ## Version of aliases are not taken into account
+    // 
+    public void testDivide() {
+        add(module("x@1").
+                requires("a"));
+        
+        add(module("agg@1").
+                alias("a@1"));
+        
+        add(module("agg@2").
+                alias("a@2"));
+        
+        add(module("a@3"));
+        
+//        resolve(queryIds("x@1"), moduleIds("x@1", "a@3"));
+        resolve(queryIds("x@1"), moduleIds("x@1", "agg@2"));
+    }
 }
