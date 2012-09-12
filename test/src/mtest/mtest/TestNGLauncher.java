@@ -26,6 +26,7 @@ import org.openjdk.jigsaw.test.sat.JDKResolverTest;
 import org.openjdk.jigsaw.test.sat.NoMatchResolverTest;
 import org.openjdk.jigsaw.test.sat.OptionalResolverTest;
 import org.openjdk.jigsaw.test.sat.PermitResolverTest;
+import org.openjdk.jigsaw.test.sat.PuzzlersTest;
 import org.openjdk.jigsaw.test.sat.RequiresResolverTest;
 import org.openjdk.jigsaw.test.sat.ServiceDependencesTest;
 import org.openjdk.jigsaw.test.sat.ServiceResolverTest;
@@ -47,6 +48,7 @@ public class TestNGLauncher {
                     PermitResolverTest.class,
                     JDKResolverTest.class,
                     ServiceResolverTest.class,
+                    PuzzlersTest.class,
                 });
         testng.addListener(tla);
         testng.run();

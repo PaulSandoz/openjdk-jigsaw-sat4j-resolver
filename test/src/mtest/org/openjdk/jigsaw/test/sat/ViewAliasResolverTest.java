@@ -246,6 +246,30 @@ public class ViewAliasResolverTest extends AbstractResolverTest {
     }
     
     @Test
+    public void testAliasWithVersionsAndDifferentModules2() {
+        add(module("r@1").
+                requires("x@1").
+                requires("y@1"));
+        
+        add(module("x@1").
+                requires("a@1"));
+
+        add(module("y@1").
+                requires("a@3"));
+        
+        add(module("b@1").
+                alias("a@1"));
+
+        add(module("c@1").
+                alias("a@2"));
+
+        add(module("d@1").
+                alias("a@3"));
+        
+        resolve(queryIds("r@1"), moduleIds("r@1", "x@1", "b@1", "y@1", "d@1"));
+    }
+    
+    @Test
     public void testOptional() {
         add(module("x@1").
                 requiresOptional("a@1"));
@@ -301,7 +325,7 @@ public class ViewAliasResolverTest extends AbstractResolverTest {
 
         fail(queryIds("x@1", "y@1"));
     }
-    
+        
     @Test
     // ## Version of aliases are not taken into account
     // 
